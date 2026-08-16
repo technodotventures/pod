@@ -1,0 +1,106 @@
+.pod-loader {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.pod-loader__tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 20%;
+  background: var(--coffee-pink, #ff1464);
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--coffee-pink, #ff1464) 24%, transparent);
+}
+
+.pod-loader__art {
+  width: 86%;
+  height: 86%;
+  overflow: visible;
+}
+
+.pod-loader__art path,
+.pod-loader__art rect {
+  fill: #fff;
+}
+
+.pod-loader__body {
+  transform-box: view-box;
+  transform-origin: 50% 87%;
+  animation: pod-loader-fill 3.2s cubic-bezier(0.35, 0, 0.45, 1) infinite;
+}
+
+.pod-loader__lid {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: pod-loader-lid 3.2s cubic-bezier(0.35, 0, 0.5, 1) infinite;
+}
+
+.pod-loader__sparkle {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pod-loader-sparkle 3.2s cubic-bezier(0.35, 0, 0.45, 1) infinite;
+}
+
+.pod-loader__sparkle--large { animation-delay: 0.13s; }
+.pod-loader__sparkle--small { animation-delay: 0.27s; }
+
+.pod-loader__label {
+  min-width: 0;
+  color: var(--fg-2);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.pod-loader--boot {
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pod-loader--boot .pod-loader__tile {
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--coffee-pink, #ff1464) 28%, transparent);
+}
+
+.pod-loader--boot .pod-loader__label {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+}
+
+@keyframes pod-loader-fill {
+  0% { opacity: 1; transform: scaleY(0.02); }
+  8% { opacity: 1; transform: scaleY(0.18); }
+  31%, 73% { opacity: 1; transform: scaleY(1); }
+  78% { opacity: 1; transform: scaleY(1.02); }
+  96%, 100% { opacity: 0; transform: scaleY(0.05); }
+}
+
+@keyframes pod-loader-lid {
+  0%, 29% { opacity: 0; transform: translateY(-30px); }
+  36%, 70% { opacity: 1; transform: translateY(0); }
+  76% { opacity: 1; transform: translateY(15px); }
+  96%, 100% { opacity: 0; transform: translateY(232px); }
+}
+
+@keyframes pod-loader-sparkle {
+  0%, 39% { opacity: 0; transform: scale(0) rotate(-15deg); }
+  47% { opacity: 1; transform: scale(1.12) rotate(0); }
+  52% { opacity: 1; transform: scale(1) rotate(5deg); }
+  59% { opacity: 1; transform: scale(0.82) rotate(10deg); }
+  67% { opacity: 1; transform: scale(1) rotate(15deg); }
+  75%, 100% { opacity: 0; transform: scale(0) rotate(15deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pod-loader__body,
+  .pod-loader__lid,
+  .pod-loader__sparkle {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

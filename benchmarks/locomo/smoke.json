@@ -1,0 +1,27 @@
+{
+  "name": "locomo-smoke",
+  "scenarios": [
+    {
+      "id": "recent-deadline-recall",
+      "scope_alias": "workspace",
+      "observations": [
+        {
+          "type": "message",
+          "body": "Coffee Pod ships after the memories UI and backlink work. Deadline: 2026-08-01.",
+          "observed_at": "2026-04-01T10:00:00Z"
+        },
+        {
+          "type": "message",
+          "body": "Google Drive import stays off by default until the user approves reflection.",
+          "observed_at": "2026-04-02T10:00:00Z"
+        }
+      ],
+      "query": "deadline 2026-08-01",
+      "assertions": {
+        "min_results": 1,
+        "claim_predicate": "deadline_is",
+        "claim_object_includes": "2026-08-01"
+      }
+    }
+  ]
+}

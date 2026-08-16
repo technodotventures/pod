@@ -1,0 +1,9 @@
+// Operations log — public surface barrel.
+//
+// See docs/atomicity.md for design and PR-by-PR rollout plan.
+export { OPERATION_ID_PATTERN, isValidOperationId } from './types.js';
+export { appendOpLogEntry, dayOfTimestamp, loadCommittedOperationIds, readAllOpLogEntries, readOpLogDay, } from './log.js';
+export { runCommit, runCommitSync } from './commit.js';
+export { persistOperationIntent, readOperationIntent, readOperationIntentRecords, removeOperationIntent, } from './intent.js';
+export { classifyOrphan, runRecovery } from './recovery.js';
+//# sourceMappingURL=index.js.map

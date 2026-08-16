@@ -1,0 +1,57 @@
+name: Beta gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: beta-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Audit all dependencies
+        run: npm audit --audit-level=low
+
+      - name: Verify vendored Smartware
+        run: |
+          npm run verify:smartware-vendor
+          npm run check:smartware-upstream
+          npm --prefix vendor/smartware run build
+          npm run verify:smartware-vendor
+          npm --prefix vendor/smartware run verify:schemas
+          npm --prefix vendor/smartware test
+          npm --prefix vendor/smartware run benchmark:retrieval-kernel
+          npm --prefix vendor/smartware run benchmark:retrieval-activation-contract
+
+      - name: Verify Pod beta
+        run: |
+          npm run beta:gate
+          npm run benchmark:recall
+
+      - name: Download Electron binary
+        run: node node_modules/electron/install.js
+
+      - name: Package unsigned macOS beta
+        run: npm run desktop:pack

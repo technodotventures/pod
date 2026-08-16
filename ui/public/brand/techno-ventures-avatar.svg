@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" width="700" height="700">
+  <rect width="700" height="700" rx="80" fill="#000"/>
+  <!-- Row 1: 3 large circles -->
+  <circle cx="175" cy="175" r="85" fill="#fff"/>
+  <circle cx="350" cy="175" r="85" fill="#fff"/>
+  <circle cx="525" cy="175" r="85" fill="#fff"/>
+  <!-- Row 2: small, large, small -->
+  <circle cx="140" cy="370" r="32" fill="#fff"/>
+  <circle cx="350" cy="370" r="80" fill="#fff"/>
+  <circle cx="560" cy="370" r="28" fill="#fff"/>
+  <!-- Row 3: tiny, medium, tiny -->
+  <circle cx="150" cy="545" r="16" fill="#fff"/>
+  <circle cx="350" cy="545" r="65" fill="#fff"/>
+  <circle cx="550" cy="545" r="14" fill="#fff"/>
+</svg>

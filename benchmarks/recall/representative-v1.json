@@ -1,0 +1,240 @@
+{
+  "name": "coffee-pod-recall-representative-v1",
+  "description": "Small deterministic product-risk corpus. This is not an official LoCoMo or LongMemEval score.",
+  "scenarios": [
+    {
+      "id": "exact-deadline",
+      "scope_alias": "workspace",
+      "observations": [
+        {
+          "body": "Coffee Pod ships after the memories UI. Deadline: 2026-08-01.",
+          "observed_at": "2026-04-01T10:00:00Z"
+        }
+      ],
+      "query": "deadline 2026-08-01",
+      "assertions": {
+        "contains": [
+          {
+            "match": {
+              "claim_predicate": "deadline_is",
+              "claim_object_includes": "2026-08-01"
+            },
+            "max_rank": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "claim-granularity-over-confidence",
+      "scope_alias": "workspace",
+      "observations": [
+        {
+          "body": "Deadline: 2026-08-01. API endpoint: https://zephyr.example.test/v2",
+          "observed_at": "2026-04-02T10:00:00Z"
+        }
+      ],
+      "actions": [
+        {
+          "type": "revise_claim",
+          "match": {
+            "claim_predicate": "deadline_is",
+            "claim_object_includes": "2026-08-01"
+          },
+          "set_confidence": "high",
+          "reason": "Make the non-matching sibling more confident"
+        }
+      ],
+      "query": "zephyr",
+      "assertions": {
+        "top_result": {
+          "claim_predicate": "related_to",
+          "claim_object_includes": "zephyr.example.test"
+        },
+        "contains": [
+          {
+            "match": {
+              "claim_predicate": "related_to",
+              "claim_object_includes": "zephyr.example.test"
+            },
+            "max_rank": 1
+          }
+        ],
+        "excludes": [
+          {
+            "match": {
+              "claim_predicate": "deadline_is"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "natural-language-status-question",
+      "scope_alias": "workspace",
+      "observations": [
+        {
+          "body": "Project Atlas is cancelled.",
+          "observed_at": "2026-04-15T10:00:00Z"
+        }
+      ],
+      "query": "What is the current status of Project Atlas?",
+      "assertions": {
+        "contains": [
+          {
+            "match": {
+              "entity_name_includes": "Project Atlas",
+              "claim_predicate": "status_is",
+              "claim_object_includes": "cancelled"
+            },
+            "max_rank": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "status-update-ranking",
+      "scope_alias": "workspace",
+      "observations": [
+        {
+          "body": "Project Atlas is active.",
+          "observed_at": "2026-04-01T10:00:00Z"
+        },
+        {
+          "body": "Project Atlas is cancelled.",
+          "observed_at": "2026-04-15T10:00:00Z"
+        }
+      ],
+      "query": "Project Atlas cancelled",
+      "assertions": {
+        "contains": [
+          {
+            "match": {
+              "entity_name_includes": "Project Atlas",
+              "claim_predicate": "status_is",
+              "claim_object_includes": "cancelled"
+            },
+            "max_rank": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "scope-isolation",
+      "scope_alias": "workspace",
+      "observations": [
+        {
+          "scope_alias": "workspace",
+          "body": "Workspace Beacon is active.",
+          "observed_at": "2026-04-03T10:00:00Z"
+        },
+        {
+          "scope_alias": "personal",
+          "body": "Personal Beacon is active.",
+          "observed_at": "2026-04-03T11:00:00Z"
+        }
+      ],
+      "query": "Beacon active",
+      "assertions": {
+        "contains": [
+          {
+            "match": {
+              "entity_name_includes": "Workspace Beacon",
+              "claim_predicate": "status_is",
+              "claim_object_includes": "active"
+            },
+            "max_rank": 1
+          }
+        ],
+        "excludes": [
+          {
+            "match": {
+              "entity_name_includes": "Personal Beacon"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "sensitive-excluded-by-default",
+      "scope_alias": "workspace",
+      "observations": [
+        {
+          "body": "Public Meridian is active.",
+          "observed_at": "2026-04-04T10:00:00Z"
+        },
+        {
+          "body": "Secret Meridian is active.",
+          "observed_at": "2026-04-04T11:00:00Z",
+          "sensitive": true
+        }
+      ],
+      "query": "Meridian active",
+      "assertions": {
+        "contains": [
+          {
+            "match": {
+              "entity_name_includes": "Public Meridian",
+              "claim_predicate": "status_is"
+            },
+            "max_rank": 1
+          }
+        ],
+        "excludes": [
+          {
+            "match": {
+              "entity_name_includes": "Secret Meridian"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "forgotten-claim-excluded",
+      "scope_alias": "workspace",
+      "observations": [
+        {
+          "body": "Project Phoenix is cancelled.",
+          "observed_at": "2026-04-05T10:00:00Z"
+        }
+      ],
+      "actions": [
+        {
+          "type": "forget_claim",
+          "match": {
+            "entity_name_includes": "Project Phoenix",
+            "claim_predicate": "status_is",
+            "claim_object_includes": "cancelled"
+          },
+          "reason": "Exercise default forgotten-state exclusion"
+        }
+      ],
+      "query": "Project Phoenix cancelled",
+      "assertions": {
+        "min_results": 0,
+        "max_results": 0,
+        "excludes": [
+          {
+            "match": {
+              "entity_name_includes": "Project Phoenix"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "unmatched-query-is-empty",
+      "scope_alias": "workspace",
+      "observations": [
+        {
+          "body": "Project Atlas is active.",
+          "observed_at": "2026-04-06T10:00:00Z"
+        }
+      ],
+      "query": "unicorn nebula",
+      "assertions": {
+        "min_results": 0,
+        "max_results": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@smartware/connectors",
+  "version": "0.1.0",
+  "description": "Connector infrastructure for Smartware-powered apps: MCP client pool, Docker runtime, OAuth token management, connection grants, and audit logging.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./mcp-clients": "./dist/mcp-clients/index.js",
+    "./connections": "./dist/connections/index.js",
+    "./mcp": "./dist/mcp/external-client.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "better-sqlite3": "^12.0.0 || ^13.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.6.0",
+    "better-sqlite3": "^13.0.3",
+    "typescript": "^6.0.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

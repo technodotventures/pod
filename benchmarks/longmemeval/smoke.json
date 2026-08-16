@@ -1,0 +1,28 @@
+{
+  "name": "longmemeval-smoke",
+  "scenarios": [
+    {
+      "id": "status-update-recall",
+      "scope_alias": "workspace",
+      "observations": [
+        {
+          "type": "message",
+          "body": "Project Atlas is active.",
+          "observed_at": "2026-04-01T10:00:00Z"
+        },
+        {
+          "type": "message",
+          "body": "Project Atlas is cancelled.",
+          "observed_at": "2026-04-15T10:00:00Z"
+        }
+      ],
+      "query": "Project Atlas cancelled",
+      "assertions": {
+        "min_results": 1,
+        "entity_name_includes": "Project Atlas",
+        "claim_predicate": "status_is",
+        "claim_object_includes": "cancelled"
+      }
+    }
+  ]
+}

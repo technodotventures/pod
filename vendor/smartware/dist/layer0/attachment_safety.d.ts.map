@@ -1,0 +1,1 @@
+{"version":3,"file":"attachment_safety.d.ts","sourceRoot":"","sources":["../../src/layer0/attachment_safety.ts"],"names":[],"mappings":"AA6BA,MAAM,WAAW,qBAAqB;IACpC,OAAO,EAAE,OAAO,CAAC;IACjB,MAAM,CAAC,EAAE,MAAM,CAAC;CACjB;AAED,wBAAgB,qBAAqB,CACnC,QAAQ,EAAE,MAAM,EAChB,SAAS,EAAE,MAAM,GAChB,qBAAqB,CAyBvB;AAED,wBAAgB,iBAAiB,CAAC,QAAQ,EAAE,MAAM,GAAG,OAAO,CAO3D"}

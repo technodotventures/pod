@@ -1,0 +1,1 @@
+{"version":3,"file":"tombstone-backfill.d.ts","sourceRoot":"","sources":["../../src/layer1/tombstone-backfill.ts"],"names":[],"mappings":"AAgBA,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,YAAY,CAAC;AAG7C,MAAM,WAAW,uBAAuB;IACtC,eAAe,EAAE,MAAM,CAAC;IACxB,kBAAkB,EAAE,MAAM,CAAC;IAC3B,2BAA2B,EAAE,MAAM,CAAC;CACrC;AA6ED,wBAAgB,kBAAkB,CAChC,KAAK,EAAE,UAAU,EACjB,OAAO,EAAE,MAAM,GACd,uBAAuB,CA4BzB"}

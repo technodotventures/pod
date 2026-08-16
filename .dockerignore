@@ -1,0 +1,8 @@
+data/
+coffee-pod-dev-data*/
+dist/
+node_modules/
+*.log
+.env
+.DS_Store
+coverage/

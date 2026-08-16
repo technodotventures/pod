@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Pink rounded square background -->
+  <rect width="120" height="120" rx="22" fill="#FE006B"/>
+  <!-- Lid — wide horizontal bar -->
+  <rect x="18" y="34" width="84" height="14" rx="2" fill="white"/>
+  <!-- Pod body — half circle / bowl shape -->
+  <path d="M18 56 L18 62 C18 90, 36 108, 60 108 C84 108, 102 90, 102 62 L102 56 Z" fill="white"/>
+</svg>

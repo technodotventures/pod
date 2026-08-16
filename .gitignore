@@ -1,0 +1,13 @@
+node_modules/
+dist/
+!vendor/smartware/dist/
+!vendor/smartware/dist/**
+dist-ui/
+release/
+.env
+data/
+coffee-pod-dev-data*/
+*.log
+.DS_Store
+.codegraph/
+pod.db
