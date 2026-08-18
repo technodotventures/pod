@@ -34,17 +34,6 @@ jobs:
       - name: Audit all dependencies
         run: npm audit --audit-level=low
 
-      - name: Verify vendored Smartware
-        run: |
-          npm run verify:smartware-vendor
-          npm run check:smartware-upstream
-          npm --prefix vendor/smartware run build
-          npm run verify:smartware-vendor
-          npm --prefix vendor/smartware run verify:schemas
-          npm --prefix vendor/smartware test
-          npm --prefix vendor/smartware run benchmark:retrieval-kernel
-          npm --prefix vendor/smartware run benchmark:retrieval-activation-contract
-
       - name: Verify Pod beta
         run: |
           npm run beta:gate

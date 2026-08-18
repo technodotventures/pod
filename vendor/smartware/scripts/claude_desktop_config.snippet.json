@@ -1,7 +1,0 @@
-{
-  "mcpServers": {
-    "smartware": {
-      "command": "/path/to/smartware/scripts/launch.sh"
-    }
-  }
-}
