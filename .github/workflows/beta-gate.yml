@@ -45,6 +45,11 @@ jobs:
           npm --prefix vendor/smartware run benchmark:retrieval-kernel
           npm --prefix vendor/smartware run benchmark:retrieval-activation-contract
 
+      - name: Build vendored connectors
+        run: |
+          npm --prefix vendor/smartware-connectors install
+          npm --prefix vendor/smartware-connectors run build
+
       - name: Verify Pod beta
         run: |
           npm run beta:gate
