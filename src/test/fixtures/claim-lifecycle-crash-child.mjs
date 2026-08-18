@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { handleForget, handleRevive, loadConfig } from 'smartware';
-import { Layer0Index } from '../../../vendor/smartware/dist/layer0/index.js';
-import { ClaimStore } from '../../../vendor/smartware/dist/layer1/store.js';
+import { Layer0Index } from 'smartware/layer0';
+import { ClaimStore } from 'smartware/layer1';
 
 const [verb, dataDir, phase, operationId, targetId] = process.argv.slice(2);
 if (!verb || !dataDir || !phase || !operationId || !targetId) process.exit(64);

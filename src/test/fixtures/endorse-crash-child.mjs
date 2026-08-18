@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { CascadePreviewStore, handleEndorse, loadConfig } from 'smartware';
-import { ClaimStore } from '../../../vendor/smartware/dist/layer1/store.js';
+import { ClaimStore } from 'smartware/layer1';
 
 const [dataDir, phase, operationId, pageId, pagePath] = process.argv.slice(2);
 if (!dataDir || !phase || !operationId || !pageId || !pagePath) process.exit(64);

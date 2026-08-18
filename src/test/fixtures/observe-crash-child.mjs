@@ -1,5 +1,5 @@
 import { handleObserve, loadConfig } from 'smartware';
-import { Layer0Index } from '../../../vendor/smartware/dist/layer0/index.js';
+import { Layer0Index } from 'smartware/layer0';
 import path from 'node:path';
 
 const [dataDir, phase, operationId, scope, content] = process.argv.slice(2);

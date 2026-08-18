@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { handleRevise, loadConfig } from 'smartware';
-import { ClaimStore } from '../../../vendor/smartware/dist/layer1/store.js';
+import { ClaimStore } from 'smartware/layer1';
 
 const [dataDir, phase, operationId, claimId] = process.argv.slice(2);
 if (!dataDir || !phase || !operationId || !claimId) process.exit(64);

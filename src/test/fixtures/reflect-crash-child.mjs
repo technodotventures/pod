@@ -1,8 +1,8 @@
 import path from 'node:path';
 import { handleCompile, loadConfig } from 'smartware';
-import { Layer0Index } from '../../../vendor/smartware/dist/layer0/index.js';
-import { ClaimStore } from '../../../vendor/smartware/dist/layer1/store.js';
-import { SearchIndex } from '../../../vendor/smartware/dist/layer3/search.js';
+import { Layer0Index } from 'smartware/layer0';
+import { ClaimStore } from 'smartware/layer1';
+import { SearchIndex } from 'smartware/layer3';
 
 const [dataDir, phase, operationId, scope] = process.argv.slice(2);
 if (!dataDir || !phase || !operationId || !scope) process.exit(64);
