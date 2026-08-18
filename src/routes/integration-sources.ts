@@ -10,7 +10,7 @@ import type { FastifyInstance } from 'fastify';
 
 import type { CoffeePodEnv } from '../config/env.js';
 import { requireOwnerAuth } from '../security/auth.js';
-import { readIntegrationConfig, writeIntegrationConfig } from '@smartware/connectors';
+import { readIntegrationConfig, writeIntegrationConfig } from '@technodotventures/smartware-connectors';
 import { listGoogleCalendars, getDriveFile, ensureAccessToken } from '../services/google-api.js';
 import type { DriveSourceConfig } from '../services/connection-pipeline.js';
 

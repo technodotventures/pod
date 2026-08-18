@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify';
 
 import type { CoffeePodEnv } from '../config/env.js';
 import { requireOwnerAuth } from '../security/auth.js';
-import { getMcpHealth, prewarmProviders } from '@smartware/connectors';
+import { getMcpHealth, prewarmProviders } from '@technodotventures/smartware-connectors';
 import { detectInstalledAgents } from '../services/agent-detection.js';
 import { applyAgentMcpConfig, parseRemoteMcpServerEntry } from '../services/agent-connection.js';
 

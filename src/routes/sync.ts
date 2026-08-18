@@ -13,7 +13,7 @@ import type { CoffeePodEnv } from '../config/env.js';
 import { getDb, insertEventIfFresh, upsertCollection, upsertObject } from '../pod/db.js';
 import { ensureAppDataSpace } from '../pod/data-spaces.js';
 import { getPodProfile, getSmartwareCore } from '../smartware/core.js';
-import { readIntegrationConfig, writeIntegrationConfig } from '@smartware/connectors';
+import { readIntegrationConfig, writeIntegrationConfig } from '@technodotventures/smartware-connectors';
 import {
   applyCalendarFilters,
   applyDriveFilters,

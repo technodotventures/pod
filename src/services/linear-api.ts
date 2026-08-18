@@ -4,7 +4,7 @@
  */
 
 import type { CoffeePodEnv } from '../config/env.js';
-import { readIntegrationConfig } from '@smartware/connectors';
+import { readIntegrationConfig } from '@technodotventures/smartware-connectors';
 
 async function linearQuery<T>(env: CoffeePodEnv, query: string, variables?: Record<string, unknown>): Promise<T> {
   const config = (await readIntegrationConfig(env, 'linear')) as { api_key?: string; access_token?: string };

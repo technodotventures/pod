@@ -4,7 +4,7 @@
  */
 
 import type { CoffeePodEnv } from '../config/env.js';
-import { readIntegrationConfig } from '@smartware/connectors';
+import { readIntegrationConfig } from '@technodotventures/smartware-connectors';
 
 interface SlackConfig {
   access_token?: string;

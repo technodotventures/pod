@@ -3,7 +3,7 @@ import type Database from 'better-sqlite3';
 import {
   listConnectionGrants,
   type ConnectionGrantRow,
-} from '@smartware/connectors';
+} from '@technodotventures/smartware-connectors';
 
 import type { CoffeePodEnv } from '../config/env.js';
 import {

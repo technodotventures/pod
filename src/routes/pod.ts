@@ -94,7 +94,7 @@ import {
   type AgentAccessOperation,
 } from '../pod/agent-access.js';
 import type { CoffeePodProfile } from '../pod/data-spaces.js';
-import { searchExternalMcpContext } from '@smartware/connectors';
+import { searchExternalMcpContext } from '@technodotventures/smartware-connectors';
 import {
   ConflictError as OperationConflictError,
   OperationIdFormatError,

@@ -4,7 +4,7 @@
  */
 
 import type { CoffeePodEnv } from '../config/env.js';
-import { readIntegrationConfig } from '@smartware/connectors';
+import { readIntegrationConfig } from '@technodotventures/smartware-connectors';
 
 async function githubFetch<T>(env: CoffeePodEnv, path: string): Promise<T> {
   const config = (await readIntegrationConfig(env, 'github')) as { access_token?: string };

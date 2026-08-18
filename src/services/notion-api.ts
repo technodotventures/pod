@@ -4,7 +4,7 @@
  */
 
 import type { CoffeePodEnv } from '../config/env.js';
-import { readIntegrationConfig } from '@smartware/connectors';
+import { readIntegrationConfig } from '@technodotventures/smartware-connectors';
 
 async function notionFetch<T>(env: CoffeePodEnv, path: string, method = 'GET', body?: unknown): Promise<T> {
   const config = (await readIntegrationConfig(env, 'notion')) as { access_token?: string };

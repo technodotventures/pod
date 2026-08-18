@@ -17,7 +17,7 @@ import {
   integrationPublicStatus,
   listIntegrations,
   readIntegrationConfig,
-} from '@smartware/connectors';
+} from '@technodotventures/smartware-connectors';
 import { readOperationIntentRecords } from 'smartware';
 
 import type { CoffeePodEnv } from '../config/env.js';

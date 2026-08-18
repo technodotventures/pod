@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 import type { CoffeePodEnv } from '../config/env.js';
 import { codexAppServer } from '../services/codex-app-server.js';
-import { writeIntegrationConfig } from '@smartware/connectors';
+import { writeIntegrationConfig } from '@technodotventures/smartware-connectors';
 
 export async function registerCodexProviderRoutes(app: FastifyInstance, env: CoffeePodEnv): Promise<void> {
   app.get('/providers/codex/status', async () => codexAppServer.status());

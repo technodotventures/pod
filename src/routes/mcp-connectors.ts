@@ -9,7 +9,7 @@ import {
   listExternalMcpTools,
   searchExternalMcpContext,
   upsertExternalMcpServer,
-} from '@smartware/connectors';
+} from '@technodotventures/smartware-connectors';
 
 export async function registerMcpConnectorRoutes(app: FastifyInstance, env: CoffeePodEnv): Promise<void> {
   app.get('/pod/mcp/servers', {

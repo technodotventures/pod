@@ -4,7 +4,7 @@ import path from 'node:path';
 import type { SmartwareCore } from 'smartware';
 
 import type { CoffeePodEnv } from '../config/env.js';
-import { readIntegrationConfig, writeIntegrationConfig } from '@smartware/connectors';
+import { readIntegrationConfig, writeIntegrationConfig } from '@technodotventures/smartware-connectors';
 import { codexAppServer } from './codex-app-server.js';
 
 export type AIProviderId = 'anthropic' | 'openai' | 'openrouter' | 'codex';

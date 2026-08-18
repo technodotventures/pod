@@ -17,13 +17,13 @@ import {
   DockerRuntimeError,
   recordMcpCall, type CallerKind, type ErrorKind,
   checkConnectionGrant,
-  // Integration registry (from @smartware/connectors)
+  // Integration registry (from @technodotventures/smartware-connectors)
   type IntegrationDef,
   listIntegrations,
   getIntegration,
   registerIntegration,
   integrationPublicStatus,
-} from '@smartware/connectors';
+} from '@technodotventures/smartware-connectors';
 import {
   isAIProviderId,
   reassignPreferredAIProvider,

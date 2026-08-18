@@ -12,7 +12,7 @@ import type { FastifyInstance } from 'fastify';
 
 import type { CoffeePodEnv } from '../config/env.js';
 import { requireOwnerAuth } from '../security/auth.js';
-import { readIntegrationConfig } from '@smartware/connectors';
+import { readIntegrationConfig } from '@technodotventures/smartware-connectors';
 import { ensureAppDataSpace } from '../pod/data-spaces.js';
 import { getPodProfile, getSmartwareCore } from '../smartware/core.js';
 import {

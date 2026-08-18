@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { readIntegrationConfig, writeIntegrationConfig } from '@smartware/connectors';
+import { readIntegrationConfig, writeIntegrationConfig } from '@technodotventures/smartware-connectors';
 
 import { buildApp } from '../app.js';
 import type { CoffeePodEnv } from '../config/env.js';

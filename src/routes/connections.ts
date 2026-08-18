@@ -14,7 +14,7 @@ import {
   createGrantRequest,
   denyGrantRequest,
   listGrantRequests,
-} from '@smartware/connectors';
+} from '@technodotventures/smartware-connectors';
 
 export async function registerConnectionRoutes(app: FastifyInstance, env: CoffeePodEnv): Promise<void> {
   const db = getDb(env);

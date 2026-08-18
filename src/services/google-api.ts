@@ -5,7 +5,7 @@
  */
 
 import type { CoffeePodEnv } from '../config/env.js';
-import { readIntegrationConfig, writeIntegrationConfig } from '@smartware/connectors';
+import { readIntegrationConfig, writeIntegrationConfig } from '@technodotventures/smartware-connectors';
 import type { CalendarRawEvent, DriveRawFile } from './connection-pipeline.js';
 
 interface TokenConfig {

@@ -47,7 +47,7 @@ import { registerDiagnosticErrorCapture } from './services/diagnostics.js';
 import { applyPendingRestore } from './services/pod-export.js';
 import { startDreamScheduler } from './services/dream-cycle.js';
 import { startReflectionScheduler } from './services/reflection-cycle.js';
-import { shutdownMcpClients } from '@smartware/connectors';
+import { shutdownMcpClients } from '@technodotventures/smartware-connectors';
 import { codexAppServer } from './services/codex-app-server.js';
 
 export async function buildApp(env: CoffeePodEnv, logger: boolean = true) {
