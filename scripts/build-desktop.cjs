@@ -14,15 +14,8 @@ try {
   if (result.error) throw result.error;
   exitCode = result.status ?? 1;
 } finally {
-  // electron-builder rebuilds better-sqlite3 for Electron in-place. Always
-  // restore the development checkout to the current Node ABI after the entire
-  // package/sign/artifact pipeline has finished or failed.
-  const restored = spawnSync('npm', ['rebuild', 'better-sqlite3'], {
-    cwd: projectRoot,
-    stdio: 'inherit',
-  });
-  if (restored.error) throw restored.error;
-  if (restored.status !== 0 && exitCode === 0) exitCode = restored.status ?? 1;
+  // better-sqlite3 13+ is N-API and is no longer rebuilt for Electron, so the
+  // development checkout never leaves the current Node ABI.
 }
 
 process.exitCode = exitCode;
