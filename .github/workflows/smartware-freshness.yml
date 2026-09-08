@@ -23,7 +23,11 @@ jobs:
           node-version: 22
           package-manager-cache: false
 
+      - name: Install locked dependencies
+        run: npm ci
+
       - name: Verify pinned Smartware release
-        run: |
-          npm run verify:smartware-vendor
-          npm run check:smartware-upstream
+        run: npm run verify:smartware-release
+
+      - name: Check upstream Smartware freshness
+        run: npm run check:smartware-upstream

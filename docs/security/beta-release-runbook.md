@@ -5,9 +5,9 @@ that requires Coffee's production identities and credentials.
 
 ## 0. Source and dependency pre-flight
 
-Do not cut a release from dirty Pod or Smartware working trees. Record a
-named standalone Smartware revision, re-vendor it, and record the Pod
-revision containing that exact snapshot.
+Do not cut a release from dirty Pod or Smartware working trees. Record the
+reviewed Smartware release in Pod's lockfile and ship that exact package
+snapshot.
 
 `coffee-pod-dev-data/` and `coffee-pod-dev-data-v1/` are ignored, excluded from
 Docker, and removed from the current Git tree without deleting either local
@@ -20,10 +20,9 @@ non-content-printing audit with `node scripts/audit-dev-data-history.mjs`
 before and after the rewrite.
 
 ```bash
-npm install
-npm run verify:smartware-vendor
+npm ci
+npm run verify:smartware-release
 npm run check:smartware-upstream
-npm --prefix vendor/smartware run build
 npm run beta:gate
 npm audit --audit-level=low
 ```
@@ -40,19 +39,10 @@ Any Critical or High finding in Electron or a production dependency blocks
 release. The current automated gate also fails on Low and Moderate findings so
 new advisories are reviewed rather than silently accumulated.
 
-Verify standalone Smartware separately:
-
-```bash
-cd ../smartware
-npm install
-npm run build
-npm test
-npm audit --omit=dev
-```
-
-The reviewed standalone baseline is 303 tests, a passing nine-scenario
-retrieval kernel, an expected activation hold on development data, and zero
-production dependency advisories.
+The standalone Smartware repository remains the upstream source of truth, but
+Pod no longer rebuilds or vendors a local Smartware tree. Use
+`npm run check:smartware-upstream` to confirm the locked release is still the
+latest reviewed stable npm package.
 
 ## 1. Build and smoke the unsigned engineering package
 

@@ -10,9 +10,11 @@ import {
   buildOpenClawMcpArgs,
   deerFlowMcpServerEntry,
   kimiCodeMcpServerEntry,
-  mergeMcpServersObject,
+  mergeHermesMcpConfig,
   parseRemoteMcpServerEntry,
+  resolveHermesConfigPath,
   upsertCodexMcpBlock,
+  upsertHermesMcpYaml,
 } from '../services/agent-connection.js';
 
 const ENTRY = {
@@ -29,14 +31,16 @@ test('agent connection accepts only bounded authenticated HTTP MCP entries', () 
 });
 
 test('JSON MCP merge preserves sibling servers and unrelated settings', () => {
-  const merged = mergeMcpServersObject({
+  const merged = mergeHermesMcpConfig({
     theme: 'dark',
-    mcpServers: { github: { url: 'https://example.test/mcp' } },
-  }, ENTRY);
+    mcp_servers: { github: { url: 'https://example.test/mcp' } },
+  }, {
+    ...ENTRY,
+    url: 'https://example.test/coffee/mcp',
+  });
 
   assert.equal(merged.config.theme, 'dark');
-  assert.deepEqual((merged.config.mcpServers as Record<string, unknown>).github, { url: 'https://example.test/mcp' });
-  assert.deepEqual((merged.config.mcpServers as Record<string, unknown>)['coffee-pod'], ENTRY);
+  assert.deepEqual((merged.config.mcp_servers as Record<string, unknown>).github, { url: 'https://example.test/mcp' });
   assert.deepEqual(merged.siblings, ['github']);
   assert.equal(merged.replaced, false);
 });
@@ -111,5 +115,63 @@ test('Kimi Code automatic setup writes its user-level mcp.json idempotently', as
   } finally {
     if (priorHome === undefined) delete process.env['KIMI_CODE_HOME'];
     else process.env['KIMI_CODE_HOME'] = priorHome;
+  }
+});
+
+test('Hermes YAML upsert preserves sibling servers and unrelated settings', () => {
+  const initial = [
+    'gateway:',
+    '  port: 18789',
+    'mcp_servers:',
+    '  github:',
+    '    url: https://example.test/mcp',
+  ].join('\n');
+  const first = upsertHermesMcpYaml(initial, ENTRY);
+
+  assert.equal(first.replaced, false);
+  assert.deepEqual(first.siblings, ['github']);
+  assert.match(first.content, /port: 18789/);
+  assert.match(first.content, /github:/);
+  assert.match(first.content, /coffee-pod:/);
+
+  const rotated = upsertHermesMcpYaml(first.content, {
+    ...ENTRY,
+    headers: { Authorization: 'Bearer cpod_agent_abcdefghijklmnopqrstuvwxABCDEFGH' },
+  });
+  assert.equal(rotated.replaced, true);
+  assert.match(rotated.content, /abcdefghijklmnopqrstuvwxABCDEFGH/);
+  assert.equal((rotated.content.match(/coffee-pod:/g) ?? []).length, 1);
+});
+
+test('Hermes config path resolves profiles and rejects traversal', () => {
+  const priorHome = process.env['HERMES_HOME'];
+  delete process.env['HERMES_HOME'];
+  try {
+    assert.match(resolveHermesConfigPath(), /\.hermes[/\\]config\.yaml$/);
+    assert.match(resolveHermesConfigPath('work'), /\.hermes[/\\]profiles[/\\]work[/\\]config\.yaml$/);
+    assert.throws(() => resolveHermesConfigPath('../other'));
+  } finally {
+    if (priorHome !== undefined) process.env['HERMES_HOME'] = priorHome;
+  }
+});
+
+test('Hermes automatic setup writes its config.yaml idempotently', async () => {
+  const hermesHome = await mkdtemp(path.join(tmpdir(), 'coffee-pod-hermes-'));
+  const priorHome = process.env['HERMES_HOME'];
+  process.env['HERMES_HOME'] = hermesHome;
+  try {
+    const first = await applyAgentMcpConfig('hermes', ENTRY);
+    const second = await applyAgentMcpConfig('hermes', ENTRY);
+    const raw = await readFile(path.join(hermesHome, 'config.yaml'), 'utf8');
+
+    assert.equal(first.created, true);
+    assert.equal(second.replaced_existing_entry, true);
+    assert.ok(raw.includes('coffee-pod:'));
+    assert.ok(raw.includes(ENTRY.url));
+    // The stored token must be the bounded agent token, not an arbitrary secret.
+    assert.ok(raw.includes(ENTRY.headers.Authorization));
+  } finally {
+    if (priorHome === undefined) delete process.env['HERMES_HOME'];
+    else process.env['HERMES_HOME'] = priorHome;
   }
 });

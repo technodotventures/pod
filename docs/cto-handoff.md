@@ -40,8 +40,9 @@ available. It is not yet an externally distributable Mac release.
 From a clean Pod checkout:
 
 ```bash
-npm install
-npm --prefix vendor/smartware run build
+npm ci
+npm run verify:smartware-release
+npm run check:smartware-upstream
 npm run beta:gate
 npm audit --omit=dev
 npm run desktop:pack
@@ -54,21 +55,9 @@ with a launchable app at `release/mac-arm64/Pod.app` on Apple Silicon.
 The full dependency audit may report a low Windows-only development-server
 advisory; it is not in the production dependency set or the Mac app runtime.
 
-The standalone Smartware repository is the source of truth and must be checked
-separately before recording the two release revisions:
-
-```bash
-cd ../smartware
-npm install
-npm run build
-npm test
-npm audit --omit=dev
-```
-
-The reviewed standalone baseline is 278 tests and zero production dependency
-advisories. Do not release from either dirty working tree. Commit Smartware
-first, re-vendor from that named revision, record both exact revisions, and
-rerun the gate.
+The reviewed Smartware release is captured by Pod's lockfile. Do not release
+from a dirty Pod working tree or a stale lockfile; the lockfile is the release
+record.
 
 ## Local Run
 
@@ -102,8 +91,8 @@ open "release/mac-arm64/Pod.app"
 
 ## Docker Run
 
-The Docker build uses the Smartware snapshot committed under
-`vendor/smartware`. Run it from the Pod repository root:
+The Docker build restores the reviewed Smartware release from `package-lock.json`.
+Run it from the Pod repository root:
 
 ```bash
 docker build -t coffee-pod .
@@ -113,8 +102,8 @@ docker run --rm -p 8732:8732 \
   coffee-pod
 ```
 
-The build does not read a sibling Smartware checkout. This keeps the runtime on
-the reviewed vendor snapshot recorded in
+The build does not read a sibling Smartware checkout or a vendor tree. This
+keeps the runtime on the reviewed release recorded in
 [smartware-authority.md](smartware-authority.md).
 
 ## Coffee Staging Integration
@@ -138,9 +127,8 @@ Minimum staging work:
   explicit user approval.
 - The current brief generator is deterministic. It is designed to prove the
   contract before adding model routing.
-- Smartware is a local file dependency backed by the committed
-  `vendor/smartware` snapshot. Do not substitute a sibling checkout in release
-  builds.
+- Smartware is a local file dependency restored from `package-lock.json`. Do
+  not substitute a sibling checkout in release builds.
 - Full backups contain private memory and connector credentials. Support should
   request the content-free diagnostics JSON, never a backup archive. See
   [backup-restore.md](backup-restore.md) and [diagnostics.md](diagnostics.md).
