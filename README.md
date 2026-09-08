@@ -159,7 +159,8 @@ Slack thread projection, and authorization boundary.
 
 `pod_dream` is an owner-authorized maintenance inspection. It runs once when
 called, does not schedule itself, and cannot write canonical memory data. See
-`vendor/smartware/docs/dream-status.md` for its current safety boundary.
+the Smartware dream-status docs shipped with the installed release for its
+current safety boundary.
 
 External MCP connectors:
 

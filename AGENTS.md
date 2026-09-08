@@ -20,9 +20,10 @@ lifecycle, retrieval, provenance, or cross-host interoperability, read
 
 - Cross-host invariant or canonical wire/storage behavior: implement and verify
   it in the public Smartware repository first, publish a named release, then
-  vendor that release into Pod. Never patch `vendor/smartware` directly.
+  consume that release through Pod's pinned npm lockfile. Never patch the
+  installed Smartware package in place.
 - Reusable substrate implementation with no wire change: implement and release
-  it in Smartware first, then vendor it into Pod.
+  it in Smartware first, then update Pod to the reviewed package release.
 - Pod product behavior, orchestration, UI, or harness-specific materialization:
   keep it in Pod and adapt it to the current Smartware contract.
 

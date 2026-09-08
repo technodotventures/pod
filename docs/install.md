@@ -75,7 +75,7 @@ http://127.0.0.1:8732
 ```
 
 For Docker handoff notes, see [cto-handoff.md](cto-handoff.md). Docker and source
-installs use the Smartware snapshot committed under `vendor/smartware`; no
+installs restore the reviewed Smartware release from `package-lock.json`; no
 sibling checkout is required.
 
 ## Verify The Runtime
