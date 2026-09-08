@@ -28,13 +28,44 @@ For release checks, signing, notarization, logs, and uninstall instructions, see
 
 ### Local Developer Runtime
 
-Use this path when developing Pod itself or testing the HTTP/OpenAPI surface.
+**Quick start (verified on macOS, Node 26)**
 
 ```bash
-npm install
-npm run build:all
-COFFEE_POD_DATA_DIR=../coffee-pod-dev-data npm start
+git clone https://github.com/technodotventures/pod.git
+cd pod
+npm install                    # native better-sqlite3 compiles here
+cp .env.example .env           # leave COFFEE_POD_API_TOKEN EMPTY for local dev
+npm run dev:all                # API on 127.0.0.1:8733 + UI on http://127.0.0.1:5173
 ```
+
+Open http://127.0.0.1:5173. The launcher waits for the expected backend before
+starting the browser UI, so the browser cannot silently connect to a missing or
+unrelated backend. Alternatively, run the Electron app for the real product
+experience (see below).
+
+Prerequisites:
+
+- Node.js >= 20. **Use the Homebrew Node 26 build** (`/opt/homebrew/bin/node`,
+  first on PATH) on macOS — the repo's native `better-sqlite3` is compiled
+  against the modern ABI and fails with `ERR_DLOPEN_FAILED` under older
+  Node distributions (e.g. `~/.local`/volta/nvm node 22).
+- npm
+- A writable data directory
+
+Gotchas (all hit in real onboarding):
+
+- **Data lives in `pod/data/`** for the browser dev runtime. It is isolated
+  from the Electron app's data (`~/Library/Application Support/...`) and from
+  any external/VPS Pod. `pod/data/` is disposable — delete it to reset.
+- **Leave `COFFEE_POD_API_TOKEN` empty in `.env` for local throwaway dev.** A
+  token enables auth on every non-health route, which you do not need unless
+  you are pairing a third-party app against your local instance.
+- **Do not run `dev:all` and `desktop:dev` simultaneously.** Two Pod servers
+  on different ports (8733 vs 8732) each with their own data dir is confusing
+  state; pick one per session.
+- **Ports:** browser dev = `COFFEE_POD_PORT` (8733 per `.env.example`,
+  configurable), Electron = 8732 default. Vite's dev proxy auto-targets the
+  `COFFEE_POD_PORT` backend and attaches the token from `.env` when set.
 
 For live backend development:
 
@@ -50,12 +81,6 @@ COFFEE_POD_DATA_DIR=../coffee-pod-dev-data npm run ui:dev
 
 The paired launcher waits for the expected backend before starting the browser
 UI. Use `npm run ui:only` only when a matching backend is already running.
-
-Prerequisites:
-
-- Node.js `>=20`
-- npm
-- A writable data directory
 
 ### Local Or VPS Service
 

@@ -16,9 +16,12 @@ VPS/service, Coffee pairing, and MCP onboarding paths.
 
 ## Development
 
+**Quick start (verified macOS, Node 26):** see `docs/install.md` →
+*Local Developer Runtime*. One-line version:
+
 ```bash
-npm install
-COFFEE_POD_DATA_DIR=../coffee-pod-dev-data npm run ui:dev
+npm install && cp .env.example .env && npm run dev:all
+# API http://127.0.0.1:8733 · UI http://127.0.0.1:5173
 ```
 
 This starts the paired Pod API and cockpit UI. The launcher waits for the
