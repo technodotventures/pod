@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 export interface RemoteMcpServerEntry {
   type?: 'http' | 'streamable-http';
@@ -13,6 +14,7 @@ type ApplySpec =
   | { strategy: 'json'; path: string }
   | { strategy: 'claude-code-cli' }
   | { strategy: 'codex-toml'; path: string }
+  | { strategy: 'hermes-yaml'; path: string }
   | { strategy: 'openclaw-cli' }
   | { strategy: 'kimi-json' }
   | { strategy: 'deerflow-json' };
@@ -28,6 +30,7 @@ const APPLY_SPECS: Record<string, ApplySpec> = {
   },
   'claude-code': { strategy: 'claude-code-cli' },
   codex: { strategy: 'codex-toml', path: '~/.codex/config.toml' },
+  hermes: { strategy: 'hermes-yaml', path: '~/.hermes/config.yaml' },
   openclaw: { strategy: 'openclaw-cli' },
   'kimi-code': { strategy: 'kimi-json' },
   deerflow: { strategy: 'deerflow-json' },
@@ -60,6 +63,21 @@ function homePath(value: string): string {
 export function resolveKimiCodeMcpPath(): string {
   const home = process.env['KIMI_CODE_HOME']?.trim();
   return path.join(home ? path.resolve(homePath(home)) : path.join(os.homedir(), '.kimi-code'), 'mcp.json');
+}
+
+export function resolveHermesConfigPath(profileId?: string): string {
+  const explicit = process.env['HERMES_HOME']?.trim();
+  const base = explicit ? path.resolve(homePath(explicit)) : path.join(os.homedir(), '.hermes');
+  const profile = profileId?.trim();
+  if (profile && profile !== 'default') {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(profile)) {
+      const error = new Error('Hermes profile names may contain letters, numbers, dots, hyphens, and underscores.');
+      (error as Error & { code?: string }).code = 'invalid_profile';
+      throw error;
+    }
+    return path.join(base, 'profiles', profile, 'config.yaml');
+  }
+  return path.join(base, 'config.yaml');
 }
 
 export function parseRemoteMcpServerEntry(value: unknown): RemoteMcpServerEntry | null {
@@ -190,6 +208,45 @@ export function kimiCodeMcpServerEntry(serverEntry: RemoteMcpServerEntry): Recor
   };
 }
 
+/** Merge the coffee-pod entry into a Hermes config object, preserving
+ *  unrelated top-level keys and sibling MCP servers. */
+export function mergeHermesMcpConfig(
+  existing: Record<string, unknown>,
+  serverEntry: RemoteMcpServerEntry,
+): { config: Record<string, unknown>; replaced: boolean; siblings: string[] } {
+  const prior = existing.mcp_servers && typeof existing.mcp_servers === 'object' && !Array.isArray(existing.mcp_servers)
+    ? existing.mcp_servers as Record<string, unknown>
+    : {};
+  return {
+    config: {
+      ...existing,
+      mcp_servers: { ...prior, [COFFEE_POD_SERVER_KEY]: serverEntry },
+    },
+    replaced: COFFEE_POD_SERVER_KEY in prior,
+    siblings: Object.keys(prior).filter(key => key !== COFFEE_POD_SERVER_KEY),
+  };
+}
+
+export function upsertHermesMcpYaml(source: string, serverEntry: RemoteMcpServerEntry): { content: string; replaced: boolean; siblings: string[] } {
+  let existing: Record<string, unknown> = {};
+  if (source.trim()) {
+    const parsed = parseYaml(source);
+    if (parsed === null || parsed === undefined) {
+      existing = {};
+    } else if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+      const error = new Error('Existing Hermes config.yaml is not a YAML mapping. Pod left it unchanged.');
+      (error as Error & { code?: string }).code = 'malformed_existing_config';
+      throw error;
+    } else {
+      existing = parsed as Record<string, unknown>;
+    }
+  }
+  const next = mergeHermesMcpConfig(existing, serverEntry);
+  // Blank line before a appended mcp_servers block keeps hand-edited files readable.
+  const body = stringifyYaml(next.config).trimEnd() + '\n';
+  return { content: body, replaced: next.replaced, siblings: next.siblings };
+}
+
 function runCommand(command: string, args: string[]): Promise<{ code: number | null; stderr: string }> {
   return new Promise((resolve) => {
     const child = spawn(command, args, { stdio: ['ignore', 'ignore', 'pipe'] });
@@ -263,7 +320,9 @@ export async function applyAgentMcpConfig(
     ? resolveDeerFlowExtensionsConfigPath()
     : spec.strategy === 'kimi-json'
       ? resolveKimiCodeMcpPath()
-      : homePath(spec.path);
+      : spec.strategy === 'hermes-yaml'
+        ? resolveHermesConfigPath(options.profileId)
+        : homePath(spec.path);
   if (!target) {
     const error = new Error('Set DEER_FLOW_EXTENSIONS_CONFIG_PATH or DEER_FLOW_PROJECT_ROOT before using one-click DeerFlow setup.');
     (error as Error & { code?: string }).code = 'config_path_required';
@@ -287,6 +346,20 @@ export async function applyAgentMcpConfig(
       path: target,
       created,
       replaced_existing_entry: next.replaced,
+      server_key: COFFEE_POD_SERVER_KEY,
+    };
+  }
+
+  if (spec.strategy === 'hermes-yaml') {
+    const next = upsertHermesMcpYaml(raw, serverEntry);
+    await writeAtomic(target, next.content);
+    return {
+      ok: true,
+      strategy: spec.strategy,
+      path: target,
+      created,
+      replaced_existing_entry: next.replaced,
+      sibling_servers: next.siblings,
       server_key: COFFEE_POD_SERVER_KEY,
     };
   }
