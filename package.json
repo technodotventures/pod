@@ -15,6 +15,7 @@
     "ui:build": "vite build",
     "ui:preview": "vite preview --host 127.0.0.1",
     "build": "tsc",
+    "lint": "npm run typecheck",
     "build:all": "npm run build && npm run ui:build",
     "mcp": "node --env-file=.env dist/mcp-server.js",
     "desktop:dev": "npm run build:all && electron electron/main.cjs",
@@ -22,6 +23,9 @@
     "desktop:dmg": "npm run build:all && node scripts/build-desktop.cjs dmg",
     "start": "node --env-file=.env dist/server.js",
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "verify:smartware-release": "node scripts/smartware-release-check.mjs verify",
+    "verify:smartware-vendor": "npm run verify:smartware-release",
+    "check:smartware-upstream": "node scripts/smartware-release-check.mjs upstream",
     "test": "npm run clean && npm run build && node --test --test-force-exit $(find dist/test -name '*.test.js' -type f)",
     "smoke:coffee": "node scripts/coffee-staging-smoke.mjs",
     "benchmark:smoke": "node scripts/benchmark-smoke.mjs",
@@ -50,6 +54,7 @@
     "pdf-parse": "^2.4.5",
     "smartware": "^0.6.3",
     "tar": "^7.5.22",
+    "yaml": "^2.8.4",
     "zod": "^4.0.0"
   },
   "devDependencies": {

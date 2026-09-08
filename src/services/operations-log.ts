@@ -13,7 +13,8 @@
 //      ops-log entry to pod_data/operations/YYYY-MM-DD.jsonl. The ops-log
 //      append is the durable cross-artifact commit signal.
 //
-// See vendor/smartware/docs/atomicity.md for the full strategy.
+// See the Smartware atomicity docs shipped with the installed release for
+// the full strategy.
 
 import { createHash } from 'node:crypto';
 import type Database from 'better-sqlite3';
@@ -168,8 +169,9 @@ export async function wrapMutation<T>(
   });
 
   if (ctx.append_ops_log !== false) {
-    // Ops-log entry LAST. Per vendor/smartware/docs/atomicity.md, presence of
-    // this entry is the durable cross-artifact commit signal.
+    // Ops-log entry LAST. Per the Smartware atomicity docs shipped with the
+    // installed release, presence of this entry is the durable cross-artifact
+    // commit signal.
     appendOpLogEntry(ctx.opsDir, {
       operation_id: ctx.operation_id,
       actor_id: ctx.actor_id,

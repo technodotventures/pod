@@ -2,7 +2,6 @@ FROM node:24-bookworm-slim AS build
 
 WORKDIR /app/coffee-pod
 COPY package.json package-lock.json ./
-COPY vendor ./vendor
 RUN npm ci
 
 COPY . .
@@ -20,7 +19,6 @@ WORKDIR /app/coffee-pod
 
 COPY --from=build /app/coffee-pod/package*.json ./
 COPY --from=build /app/coffee-pod/node_modules ./node_modules
-COPY --from=build /app/coffee-pod/vendor ./vendor
 COPY --from=build /app/coffee-pod/dist ./dist
 COPY --from=build /app/coffee-pod/dist-ui ./dist-ui
 COPY --from=build /app/coffee-pod/scripts ./scripts
