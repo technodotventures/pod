@@ -10,6 +10,6 @@ Source note: [docs/audits/2026-08-24-pod-audit.md](audits/2026-08-24-pod-audit.m
 |---|---|---|---|
 | POD-AUDIT-001 | High | fixed | Packaging / CI drift: vendored Smartware references remained after the repo switched to npm consumption. Updated Dockerfile, workflow, docs, and release-check scripts; verified with `npm ci`, `npm run verify:smartware-release`, `npm run check:smartware-upstream`, `npm run lint`, `npm run build`, and `npm audit --omit=dev`. |
 | POD-AUDIT-002 | Medium | open | Agent bearer tokens are stored plaintext in SQLite. |
-| POD-AUDIT-003 | Medium | open | `/pod/watch` trusts the caller-supplied `actor_id` after auth. |
+| POD-AUDIT-003 | Medium | fixed | `/pod/watch` trusts the caller-supplied `actor_id` to select the subscription identity. Fixed: watch upgrades authenticate the caller and bind the subscription to the authenticated principal; spoofed bindings refused (401/403). Tests: `src/test/watch-auth.test.ts`. |
 
 Update statuses here when a finding is fixed or explicitly rejected.
