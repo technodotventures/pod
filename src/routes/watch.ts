@@ -8,6 +8,10 @@ import type { PodScopeAlias } from '../pod/types.js';
 import { getPodProfile, getSmartwareCore } from '../smartware/core.js';
 import { eventsSince, subscribeWatch, type WatchEvent, type WatchEventType, type WatchPattern } from '../services/watch-events.js';
 import { evaluateAccess } from 'smartware';
+import { verifyClientToken } from '../security/client-tokens.js';
+import { validateSession } from '../security/sessions.js';
+import { hasPinConfiguredSync, isReadOnly, resolveTrustMode } from '../security/trust-mode.js';
+import { getAgentByToken, getDb } from '../pod/db.js';
 
 const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 const EVENT_TYPES = new Set<WatchEventType>(['compile', 'revise', 'forget', 'contradict']);
@@ -83,12 +87,110 @@ export async function registerWatchRoutes(app: FastifyInstance, env: CoffeePodEn
   });
 }
 
+export interface WatchAuthDecision {
+  allowed: boolean;
+  status?: number;
+  message?: string;
+  actorId?: string;
+  kind?: 'owner' | 'session' | 'client' | 'agent' | 'open';
+}
+
+function tokenFromUpgrade(request: IncomingMessage): string | undefined {
+  const header = request.headers.authorization;
+  if (header?.startsWith('Bearer ')) {
+    return header.slice('Bearer '.length).trim();
+  }
+
+  const podToken = request.headers['x-coffee-pod-token'];
+  return Array.isArray(podToken) ? podToken[0] : podToken;
+}
+
+/**
+ * POD-AUDIT-003: bind the subscription identity to the caller's authenticated
+ * principal. Mirrors the HTTP auth cascade in security/auth.ts (owner token /
+ * client token / PIN session / agent bearer) plus requireActorAuth's
+ * identity-binding rule: client and agent credentials may only act as their
+ * own actor; owner and session may act for any actor. Open mode (no api token,
+ * no PIN) and local-trust reads keep their documented unauthenticated
+ * behavior (parity with GET routes).
+ */
+export async function authorizeWatchActor(
+  env: CoffeePodEnv,
+  request: IncomingMessage,
+  requestedActorId: string,
+): Promise<WatchAuthDecision> {
+  const token = tokenFromUpgrade(request);
+
+  // 1. Owner api token (parity with registerOptionalApiTokenAuth).
+  if (token && env.apiToken && token === env.apiToken) {
+    return { allowed: true, actorId: requestedActorId, kind: 'owner' };
+  }
+
+  // 2. Client token — may only subscribe as its own actor.
+  if (token) {
+    const client = await verifyClientToken(env, token);
+    if (client) {
+      if (client.actor_id === requestedActorId) {
+        return { allowed: true, actorId: requestedActorId, kind: 'client' };
+      }
+      return { allowed: false, status: 403, message: 'Forbidden' };
+    }
+  }
+
+  // 3. PIN session — full local user, may act for any actor.
+  if (token) {
+    const session = validateSession(token);
+    if (session) {
+      return { allowed: true, actorId: requestedActorId, kind: 'session' };
+    }
+  }
+
+  // 4. Agent bearer — may only subscribe as the resolved agent itself.
+  if (token && token.startsWith('cpod_agent_')) {
+    try {
+      const agent = getAgentByToken(getDb(env), token);
+      if (agent) {
+        if (agent.status !== 'active' && agent.status !== 'live') {
+          return { allowed: false, status: 403, message: 'Forbidden' };
+        }
+        if (agent.id === requestedActorId) {
+          return { allowed: true, actorId: requestedActorId, kind: 'agent' };
+        }
+        return { allowed: false, status: 403, message: 'Forbidden' };
+      }
+    } catch {
+      // fall through to the denial below
+    }
+    return { allowed: false, status: 401, message: 'Unauthorized' };
+  }
+
+  // 5. Trust modes without credentials.
+  const trustMode = resolveTrustMode(env);
+  if (trustMode === 'open' && !hasPinConfiguredSync(env)) {
+    return { allowed: true, actorId: requestedActorId, kind: 'open' };
+  }
+  if (trustMode === 'local-trust' && isReadOnly(request.method ?? 'GET')) {
+    // Read-only exploration in local-trust mode is unauthenticated by design
+    // (see security/trust-mode.ts); a watch subscription is a read.
+    return { allowed: true, actorId: requestedActorId, kind: 'open' };
+  }
+
+  return { allowed: false, status: 401, message: 'Unauthorized' };
+}
+
 async function handleUpgrade(request: IncomingMessage, socket: Duplex, env: CoffeePodEnv, clients: Set<Duplex>): Promise<void> {
   const url = new URL(request.url ?? '/', `http://${request.headers.host ?? '127.0.0.1'}`);
   if (url.pathname !== '/pod/watch') return sendHttpError(socket, 404, 'Not Found');
 
   const actorId = url.searchParams.get('actor_id');
   if (!actorId) return sendHttpError(socket, 400, 'Bad Request');
+
+  // POD-AUDIT-003: bind the subscription identity to the caller's
+  // authenticated principal before any subscription is established.
+  const auth = await authorizeWatchActor(env, request, actorId);
+  if (!auth.allowed) {
+    return sendHttpError(socket, auth.status ?? 401, auth.message ?? 'Unauthorized');
+  }
 
   const core = await getSmartwareCore(env);
   const profile = getPodProfile(core, env);
