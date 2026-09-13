@@ -896,6 +896,16 @@ function migrate(db: Database.Database): void {
     if (agentCols.length > 0 && !agentCols.some(c => c.name === 'context_budget')) {
       db.exec('ALTER TABLE agents ADD COLUMN context_budget INTEGER');
     }
+    // POD-AUDIT-002: agent bearers are hashed at rest. Rewrite any row still
+    // holding a plaintext `cpod_agent_…` value to its sha256 hex. Idempotent —
+    // hashes never carry the token prefix.
+    if (agentCols.length > 0) {
+      const plaintextRows = db.prepare(
+        "SELECT id, auth_token FROM agents WHERE auth_token LIKE 'cpod_agent_%'",
+      ).all() as Array<{ id: string; auth_token: string }>;
+      const updateToken = db.prepare('UPDATE agents SET auth_token = ? WHERE id = ?');
+      for (const row of plaintextRows) updateToken.run(hashAgentToken(row.auth_token), row.id);
+    }
   } catch { /* agents table may not exist yet — handled by CREATE TABLE above */ }
 
   const skillCols = db.prepare("PRAGMA table_info(skills)").all() as Array<{ name: string }>;
@@ -3085,8 +3095,10 @@ export interface PodAgent {
   updated_at: string;
   created_by: string;
   metadata: Record<string, unknown> | null;
-  /** Per-agent bearer token. May be null for legacy rows; mint via
-   *  rotateAgentToken() when first accessed. */
+  /** Freshly minted bearer token — populated ONLY on the call that mints it
+   *  (create / rotate / connection reveal) and returned to the caller once.
+   *  Ordinary reads are always null: at rest the column holds sha256(token)
+   *  and the raw value is never recoverable (POD-AUDIT-002). */
   auth_token: string | null;
   // ── Brain fields (the agent's "different brain"): a bounded memory view,
   //    a self-concept, and a default context budget. ──
@@ -3128,7 +3140,7 @@ function rowToAgent(row: Record<string, unknown>): PodAgent {
     updated_at: String(row.updated_at),
     created_by: String(row.created_by ?? 'user'),
     metadata,
-    auth_token: (row.auth_token as string | null) ?? null,
+    auth_token: null, // POD-AUDIT-002: stored value is a hash; never surface it on reads
     persona: (row.persona as string | null) ?? null,
     access_mode: normaliseAgentAccessMode(row.access_mode),
     scopes: (() => {
@@ -3142,11 +3154,23 @@ function rowToAgent(row: Record<string, unknown>): PodAgent {
 }
 
 /** Generate a per-agent bearer token. `cpod_agent_<32-char-base64url>`.
- *  Tokens are opaque; the route auth middleware matches the prefix and
- *  resolves to the agents.id whose auth_token equals the bearer value. */
+ *  Tokens are opaque; the route auth middleware matches the prefix, hashes
+ *  the presented bearer, and resolves to the agents.id whose auth_token
+ *  equals that sha256 hex (POD-AUDIT-002 — plaintext is never stored). */
 function mintAgentToken(): string {
   // 24 random bytes → 32 base64url chars. crypto is already imported.
   return 'cpod_agent_' + crypto.randomBytes(24).toString('base64url');
+}
+
+/** sha256 hex of an agent bearer — the only form kept at rest. */
+function hashAgentToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/** Whether the agent currently has a bearer (the value itself is unreadable). */
+export function hasAgentToken(db: Database.Database, id: string): boolean {
+  const row = db.prepare('SELECT auth_token FROM agents WHERE id = ?').get(id) as { auth_token: string | null } | undefined;
+  return !!row?.auth_token;
 }
 
 export function listAgents(db: Database.Database): PodAgent[] {
@@ -3177,6 +3201,8 @@ export function upsertAgent(db: Database.Database, input: {
   const id = input.id ?? `agent:${input.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   const ts = now();
   const existing = getAgent(db, id);
+  /** Set only when this call mints a fresh bearer; returned once, stored hashed. */
+  let mintedToken: string | null = null;
   if (existing) {
     const accessMode = normaliseAgentAccessMode(input.access_mode, existing.access_mode);
     const scopes = scopesForAgentStorage(
@@ -3205,15 +3231,22 @@ export function upsertAgent(db: Database.Database, input: {
       input.context_budget !== undefined ? input.context_budget : existing.context_budget,
       id,
     );
-    // Back-fill auth_token if the row pre-dates the migration.
-    if (!existing.auth_token) {
-      db.prepare('UPDATE agents SET auth_token = ? WHERE id = ?').run(mintAgentToken(), id);
+    // Back-fill auth_token if the row predates the column (or never got one).
+    // Presence must be read from SQL: PodAgent.auth_token is null on all
+    // ordinary reads by design (POD-AUDIT-002).
+    const hasTokenRow = db.prepare('SELECT auth_token FROM agents WHERE id = ?').get(id) as { auth_token: string | null } | undefined;
+    if (!hasTokenRow?.auth_token) {
+      const fresh = mintAgentToken();
+      db.prepare('UPDATE agents SET auth_token = ? WHERE id = ?').run(hashAgentToken(fresh), id);
+      mintedToken = fresh;
     }
   } else {
     const accessMode = normaliseAgentAccessMode(input.access_mode);
     const scopes = scopesForAgentStorage(accessMode, input.scopes);
-    // New agents get a token immediately so the invite blob has something
-    // real to render in step 2 of the Connect modal.
+    // New agents get a bearer immediately — stored only as its hash — and the
+    // raw value is returned to the caller once via this call.
+    const fresh = mintAgentToken();
+    mintedToken = fresh;
     db.prepare(`
       INSERT INTO agents (id, name, description, role, workspace_id, model, status, created_at, updated_at, created_by, metadata, auth_token, persona, access_mode, scopes, context_budget)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -3229,14 +3262,16 @@ export function upsertAgent(db: Database.Database, input: {
       ts,
       input.created_by ?? 'user',
       input.metadata ? JSON.stringify(input.metadata) : null,
-      mintAgentToken(),
+      hashAgentToken(fresh),
       input.persona ?? null,
       accessMode,
       JSON.stringify(scopes),
       input.context_budget ?? null,
     );
   }
-  return getAgent(db, id)!;
+  const result = getAgent(db, id)!;
+  if (mintedToken) result.auth_token = mintedToken;
+  return result;
 }
 
 /** Rotate an agent's bearer token. Returns the new token (only time it's
@@ -3245,7 +3280,7 @@ export function rotateAgentToken(db: Database.Database, id: string): string | nu
   const existing = getAgent(db, id);
   if (!existing) return null;
   const token = mintAgentToken();
-  db.prepare('UPDATE agents SET auth_token = ?, updated_at = ? WHERE id = ?').run(token, now(), id);
+  db.prepare('UPDATE agents SET auth_token = ?, updated_at = ? WHERE id = ?').run(hashAgentToken(token), now(), id);
   return token;
 }
 
@@ -3253,7 +3288,7 @@ export function rotateAgentToken(db: Database.Database, id: string): string | nu
  *  map `Authorization: Bearer cpod_agent_...` headers to an actor_id. */
 export function getAgentByToken(db: Database.Database, token: string): PodAgent | null {
   if (!token || !token.startsWith('cpod_agent_')) return null;
-  const row = db.prepare('SELECT * FROM agents WHERE auth_token = ?').get(token) as Record<string, unknown> | undefined;
+  const row = db.prepare('SELECT * FROM agents WHERE auth_token = ?').get(hashAgentToken(token)) as Record<string, unknown> | undefined;
   return row ? rowToAgent(row) : null;
 }
 
