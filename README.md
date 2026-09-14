@@ -28,6 +28,10 @@ This starts the paired Pod API and cockpit UI. The launcher waits for the
 expected Pod runtime before exposing the UI, so the browser cannot silently
 connect to a missing or unrelated backend.
 
+**Tests:** `npm test` (unit + integration) and `npm run test:e2e` (Playwright E2E
++ a11y + visual snapshots — runs against an isolated Pod instance). Details:
+[docs/testing.md](docs/testing.md).
+
 For API-only development:
 
 ```bash
