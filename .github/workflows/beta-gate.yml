@@ -25,7 +25,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          # Node 26 = the repo's verified runtime (docs/install.md).
+          # Node 22 cancels the watch-auth tests (event loop drains while promises are pending).
+          node-version: 26
           package-manager-cache: false
 
       - name: Install locked dependencies
