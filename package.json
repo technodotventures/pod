@@ -27,6 +27,8 @@
     "verify:smartware-vendor": "npm run verify:smartware-release",
     "check:smartware-upstream": "node scripts/smartware-release-check.mjs upstream",
     "test": "npm run clean && npm run build && node --test --test-force-exit $(find dist/test -name '*.test.js' -type f)",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
     "smoke:coffee": "node scripts/coffee-staging-smoke.mjs",
     "benchmark:smoke": "node scripts/benchmark-smoke.mjs",
     "benchmark:recall": "node scripts/run-benchmark-fixture.mjs benchmarks/recall/representative-v1.json",
@@ -58,6 +60,8 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/mailparser": "^3.4.6",

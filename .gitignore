@@ -6,8 +6,11 @@ dist-ui/
 release/
 .env
 data/
+.e2e-data/
 coffee-pod-dev-data*/
 *.log
 .DS_Store
 .codegraph/
 pod.db
+playwright-report/
+test-results/

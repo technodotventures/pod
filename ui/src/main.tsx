@@ -2353,7 +2353,7 @@ function AIChatPanel({ open, onClose, collections, authToken, objects, activeCon
         <button className="ai-chat-expand" onClick={() => setExpanded(e => !e)} title={expanded ? 'Collapse' : 'Expand'}>
           {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
         </button>
-        <button className="ai-chat-close" onClick={onClose}>
+        <button className="ai-chat-close" aria-label="Close Ask Pod" onClick={onClose}>
           <X size={16} />
         </button>
       </div>
@@ -3373,7 +3373,7 @@ function App() {
                   <span className="workspace-menu-theme-label">Theme</span>
                   <div className="theme-segment">
                     {(['light', 'auto', 'dark'] as const).map(m => (
-                      <button key={m} className={`theme-segment-btn${themeMode === m ? ' active' : ''}`} onClick={() => setThemeMode(m)}>
+                      <button key={m} className={`theme-segment-btn${themeMode === m ? ' active' : ''}`} aria-label={`${m.charAt(0).toUpperCase() + m.slice(1)} theme`} onClick={() => setThemeMode(m)}>
                         {m === 'light' ? <Sun size={14} /> : m === 'dark' ? <Moon size={14} /> : <Monitor size={14} />}
                       </button>
                     ))}
@@ -3616,7 +3616,7 @@ function App() {
                 <span className="workspace-menu-theme-label">Theme</span>
                 <div className="theme-segment">
                   {(['light', 'auto', 'dark'] as const).map(m => (
-                    <button key={m} className={`theme-segment-btn${themeMode === m ? ' active' : ''}`} onClick={() => setThemeMode(m)}>
+                    <button key={m} className={`theme-segment-btn${themeMode === m ? ' active' : ''}`} aria-label={`${m.charAt(0).toUpperCase() + m.slice(1)} theme`} onClick={() => setThemeMode(m)}>
                       {m === 'light' ? <Sun size={14} /> : m === 'dark' ? <Moon size={14} /> : <Monitor size={14} />}
                     </button>
                   ))}
@@ -3624,7 +3624,7 @@ function App() {
                 <div className="theme-hover-popout">
                   <div className="theme-segment">
                     {(['light', 'auto', 'dark'] as const).map(m => (
-                      <button key={m} className={`theme-segment-btn${themeMode === m ? ' active' : ''}`} onClick={() => setThemeMode(m)}>
+                      <button key={m} className={`theme-segment-btn${themeMode === m ? ' active' : ''}`} aria-label={`${m.charAt(0).toUpperCase() + m.slice(1)} theme`} onClick={() => setThemeMode(m)}>
                         {m === 'light' ? <Sun size={14} /> : m === 'dark' ? <Moon size={14} /> : <Monitor size={14} />}
                       </button>
                     ))}
@@ -12543,7 +12543,7 @@ function DocsView(rawProps: { objects: PodObject[]; collections: PodCollection[]
               <span className="docs-create-divider-v" />
               <DropdownMenu open={showCreateMenu} onOpenChange={setShowCreateMenu}>
                 <DropdownMenuTrigger asChild>
-                  <button className="docs-create-chevron"><ChevronDown size={12} /></button>
+                  <button className="docs-create-chevron" aria-label="Create options"><ChevronDown size={12} /></button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onSelect={() => { if (!sidebarRevealed) { createDocQuiet(); } else { createDoc(activeFolderId || 'inbox'); } }}><FilePlus size={14} /> New Doc</DropdownMenuItem>
@@ -12772,7 +12772,7 @@ function DocsView(rawProps: { objects: PodObject[]; collections: PodCollection[]
           <div className="docs-table-resizable" style={{ '--doc-grid': docsResize.gridTemplate } as React.CSSProperties}>
             <div className="docs-table-head">
               <span className="docs-col-check">
-                <input type="checkbox" className="row-checkbox" checked={allChecked} ref={el => { if (el) el.indeterminate = someChecked && !allChecked; }} onChange={toggleAll} />
+                <input type="checkbox" className="row-checkbox" aria-label="Select all docs" checked={allChecked} ref={el => { if (el) el.indeterminate = someChecked && !allChecked; }} onChange={toggleAll} />
               </span>
               <span className="docs-col-type" />
               <button className={`docs-col-name docs-col-sort resizable-col ${sortCol === 'name' ? 'active' : ''}`} onClick={() => toggleSort('name')}>
@@ -12845,7 +12845,7 @@ function DocsView(rawProps: { objects: PodObject[]; collections: PodCollection[]
                           onDrop={(e) => { e.preventDefault(); handleDrop(f.id, dropPosition, 'folder'); }}
                         >
                           <span className="docs-col-check" onClick={(e) => toggleCheck(`folder:${f.id}`, e)}>
-                            <input type="checkbox" className="row-checkbox" checked={checkedIds.has(`folder:${f.id}`)} readOnly />
+                            <input type="checkbox" className="row-checkbox" aria-label="Select folder row" checked={checkedIds.has(`folder:${f.id}`)} readOnly />
                           </span>
                           <span className="docs-col-type" />
                           <span className="docs-col-name">
@@ -12907,7 +12907,7 @@ function DocsView(rawProps: { objects: PodObject[]; collections: PodCollection[]
                             onDrop={(e) => { e.preventDefault(); handleDrop(doc.id, dropPosition, 'doc'); }}
                           >
                             <span className="docs-col-check" onClick={(e) => toggleCheck(doc.id, e)}>
-                              <input type="checkbox" className="row-checkbox" checked={checkedIds.has(doc.id)} readOnly />
+                              <input type="checkbox" className="row-checkbox" aria-label="Select doc row" checked={checkedIds.has(doc.id)} readOnly />
                             </span>
                             <span className="docs-col-type">
                               {(() => { const k = docKindOverrides[doc.id] ?? doc.kind; const I = getTypeIcon(k); return <I size={14} color={getTypeColor(k)} />; })()}
@@ -12971,7 +12971,7 @@ function DocsView(rawProps: { objects: PodObject[]; collections: PodCollection[]
                       onDrop={(e) => { e.preventDefault(); handleDrop(doc.id, dropPosition, 'doc'); }}
                     >
                       <span className="docs-col-check" onClick={(e) => toggleCheck(doc.id, e)}>
-                        <input type="checkbox" className="row-checkbox" checked={checkedIds.has(doc.id)} readOnly />
+                        <input type="checkbox" className="row-checkbox" aria-label="Select doc row" checked={checkedIds.has(doc.id)} readOnly />
                       </span>
                       <span className="docs-col-type">
                         {(() => { const k = docKindOverrides[doc.id] ?? doc.kind; const I = getTypeIcon(k); return <I size={14} color={getTypeColor(k)} />; })()}

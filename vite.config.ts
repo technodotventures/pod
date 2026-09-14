@@ -23,7 +23,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 5173,
+      // COFFEE_POD_UI_PORT lets parallel worktrees / E2E runs pick deterministic
+      // ports; default stays 5173 for the standard dev flow.
+      port: Number(process.env.COFFEE_POD_UI_PORT || env.COFFEE_POD_UI_PORT || 5173),
       host: '127.0.0.1',
       proxy: {
         // Registry proxies — go direct to external APIs (no backend needed)
