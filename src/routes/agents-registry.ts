@@ -43,6 +43,7 @@ import {
   deleteAgent,
   getAgent,
   getDb,
+  hasAgentToken,
   listAgentGrants,
   listAgents,
   revokeAgentGrant,
@@ -521,9 +522,13 @@ export async function registerAgentRegistryRoutes(app: FastifyInstance, env: Cof
     });
     syncAgentAccessGrant(core, profile, child);
 
+    // The child needs a working bearer. If this call created the child, the
+    // fresh value rides on `child.auth_token`; otherwise rotate — the stored
+    // value is only a hash (POD-AUDIT-002), so re-spawning issues a new
+    // bearer and the previous one dies.
     return {
       agent: child,
-      token: child.auth_token,   // the child uses this Bearer for /pod/context
+      token: child.auth_token ?? rotateAgentToken(db, child.id) ?? null,
       parent_id: parent?.id ?? 'owner',
       inherited_view: parentScopes,
       granted_view: childScopes,
@@ -657,20 +662,26 @@ export async function registerAgentRegistryRoutes(app: FastifyInstance, env: Cof
    * bearer token, granted collections, capabilities, and a pre-rendered
    * invite blob the user can copy-paste into the agent's config OR chat.
    *
-   * Owner-only. Token is masked unless `?reveal=1`.
+   * Owner-only. The bearer is stored only as a hash, so it can never be
+   * re-read: `?reveal=1` rotates — minting a fresh bearer (the previous one
+   * dies immediately) — and returns the new value for the invite blob.
    */
   app.get<{ Params: { agent_id: string } }>('/pod/registry/agents/:agent_id/connection', {
-    schema: { summary: 'Return the parts needed to compose an agent invite.' },
+    schema: { summary: 'Return the parts needed to compose an agent invite; ?reveal=1 rotates the bearer and returns it once.' },
   }, async (request, reply) => {
     if (!await requireOwnerAuth(request, reply, env)) return;
     const { agent_id } = request.params;
     const agent = getAgent(db, agent_id);
     if (!agent) return reply.code(404).send({ error: 'not_found', message: 'Agent not found' });
 
-    // The FULL token is always returned. The agent needs the real bytes;
-    // any masking is a client-side display affordance on the token field,
-    // not on the invite blob the user actually hands to the agent.
-    const token = agent.auth_token ?? '';
+    // POD-AUDIT-002: storage holds sha256(token) only, so the raw bearer is
+    // unrecoverable by design. Reveal mints a new one (rotating the old).
+    const reveal = String((request.query as { reveal?: unknown } | undefined)?.reveal ?? '') === '1';
+    let token: string | null = null;
+    if (reveal) {
+      token = rotateAgentToken(db, agent_id);
+      if (!token) return reply.code(404).send({ error: 'not_found', message: 'Agent not found' });
+    }
     const grants = listAgentGrants(db, agent_id);
     const podUrl = process.env['COFFEE_POD_URL'] || `http://${env.host}:${env.port}`;
     const collections = grants.map(g => g.collection_id);
@@ -682,6 +693,7 @@ export async function registerAgentRegistryRoutes(app: FastifyInstance, env: Cof
         client_id: typeof agent.metadata?.client_id === 'string' ? agent.metadata.client_id : null,
         pod_url: podUrl,
         token,
+        has_token: hasAgentToken(db, agent_id),
         grants: collections,
         access_mode: agent.access_mode,
         scopes: agent.scopes ?? [],

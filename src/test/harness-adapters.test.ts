@@ -79,7 +79,9 @@ test('harness profiles receive stable, independent Pod identities and keys', asy
     });
     assert.equal(updateWork.statusCode, 200);
     assert.equal(updateWork.json().agent.id, first.id);
-    assert.equal(updateWork.json().agent.auth_token, first.auth_token);
+    // POD-AUDIT-002: the bearer is returned only when minted. An update never
+    // re-reads it (storage is a hash) — the original bearer stays valid.
+    assert.equal(updateWork.json().agent.auth_token, null);
 
     const createPersonal = await app.inject({
       method: 'POST',
