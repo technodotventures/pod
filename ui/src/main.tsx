@@ -176,6 +176,7 @@ import { normalizeReflectionCadence, reflectionIntervalSeconds } from './onboard
 import { configuredPinLength, DEFAULT_PIN_LENGTH, isCompletePin } from './pin-entry';
 import { askPod, localAskPodSearchTerms, suggestedPromptsForScope, looksLikeAskQuery, type AskPodScope, type AskPodResult } from './ask-pod-client';
 import { podLoadErrorMessage } from './pod-load-error';
+import { freshnessBucket, pluginComponentDiff, skillFileDiff, type FreshnessBucket } from './capability-utils';
 import {
   connectionRequestDetails,
   type ConnectionManagementTab,
@@ -1285,6 +1286,11 @@ function formatActorName(raw: string): string {
     'person-local': 'You',
   };
   return map[raw] ?? raw.split(/[:\-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+function clockTime(value: Date | string): string {
+  const d = typeof value === 'string' ? new Date(value) : value;
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 function relativeTime(value: string): string {
@@ -14330,6 +14336,17 @@ interface SkillAgent {
   name: string;
   status: string;
   discovered?: boolean;
+  harness?: string | null;
+}
+
+/* Run 007 — capability list filters (I7). */
+interface CapabilityFilters {
+  q: string;
+  source: string;
+  risk: string;
+  freshness: 'all' | FreshnessBucket;
+  update: 'all' | 'waiting' | 'current';
+  deploy: 'all' | 'deployed' | 'not-deployed';
 }
 
 /* Proxied through backend to avoid CORS */
@@ -14781,6 +14798,11 @@ function SkillsBrowseTab({
   const [visibleCount, setVisibleCount] = React.useState(30);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [sourceHealth, setSourceHealth] = React.useState<Record<'clawhub' | 'skills.sh' | 'skillsmp', 'ok' | 'failed' | 'pending'>>(
+    () => ({ clawhub: 'pending', 'skills.sh': 'pending', skillsmp: 'pending' }),
+  );
+  const [lastLoadedAt, setLastLoadedAt] = React.useState<Date | null>(null);
+  const [skillsShMeta, setSkillsShMeta] = React.useState<{ cached: boolean; fetchedAt: string } | null>(null);
   const [selectedSkill, setSelectedSkill] = React.useState<BrowseSkill | null>(null);
   const [detailSkill, setDetailSkill] = React.useState<BrowseSkill | null>(null);
   const [detailLoading, setDetailLoading] = React.useState(false);
@@ -14814,6 +14836,10 @@ function SkillsBrowseTab({
     setLoading(true);
     setError(null);
     setVisibleCount(30);
+    setSkillsShMeta(null);
+    let clawhubFailed = false;
+    let skillsShFailed = false;
+    let skillsmpFailed = false;
 
     const fetchAll = async () => {
       const results: { clawhub: BrowseSkill[]; skillssh: BrowseSkill[]; skillsmp: BrowseSkill[] } = { clawhub: [], skillssh: [], skillsmp: [] };
@@ -14844,6 +14870,7 @@ function SkillsBrowseTab({
               if (directErr.name === 'AbortError') throw directErr;
               console.warn('ClawHub fetch failed (proxy + direct):', directErr);
             }
+            clawhubFailed = true;
             return [];
           }
         };
@@ -14870,6 +14897,7 @@ function SkillsBrowseTab({
           }
         } catch (err: any) {
           if (err.name === 'AbortError') return;
+          clawhubFailed = true;
         }
       }
 
@@ -14883,9 +14911,13 @@ function SkillsBrowseTab({
           data = await fetchSkillsSh(`/skills?view=${view}`, ctrl.signal);
         }
         results.skillssh = (data.skills ?? data.results ?? data ?? []).slice(0, 60).map(normalizeSkillsSh);
+        if (data && typeof data === 'object' && typeof (data as any).fetched_at === 'string') {
+          setSkillsShMeta({ cached: Boolean((data as any).cached), fetchedAt: (data as any).fetched_at });
+        }
       } catch (err: any) {
         if (err.name === 'AbortError') return;
         console.warn('skills.sh fetch failed:', err);
+        skillsShFailed = true;
       }
 
       // Fetch SkillsMP (proxy → direct fallback)
@@ -14912,6 +14944,7 @@ function SkillsBrowseTab({
         } catch (err: any) {
           if (err.name === 'AbortError') return;
           console.warn('SkillsMP fetch failed:', err);
+          skillsmpFailed = true;
         }
       }
 
@@ -14938,6 +14971,12 @@ function SkillsBrowseTab({
         setError('Could not reach skill registries — showing featured skills');
         setSkills(FEATURED_SKILLS);
       }
+      setSourceHealth({
+        clawhub: clawhubFailed ? 'failed' : 'ok',
+        'skills.sh': skillsShFailed ? 'failed' : 'ok',
+        skillsmp: skillsmpFailed ? 'failed' : 'ok',
+      });
+      setLastLoadedAt(new Date());
       setLoading(false);
     };
     fetchAll();
@@ -15317,6 +15356,17 @@ function SkillsBrowseTab({
 
       {error && <div className="browse-notice">{error}</div>}
 
+      {lastLoadedAt && (
+        <div className="capability-freshness-strip" role="status">
+          <Clock size={12} />
+          <span>Registry results — last loaded {clockTime(lastLoadedAt)}; sources may be cached up to 5 minutes.</span>
+          {skillsShMeta?.cached && <span className="freshness-note">skills.sh served from cache (fetched {clockTime(skillsShMeta.fetchedAt)})</span>}
+          {sourceHealth.clawhub === 'failed' && <span className="freshness-warn">ClawHub unreachable</span>}
+          {sourceHealth['skills.sh'] === 'failed' && <span className="freshness-warn">skills.sh unreachable</span>}
+          {sourceHealth.skillsmp === 'failed' && <span className="freshness-warn">SkillsMP unreachable</span>}
+        </div>
+      )}
+
       {/* Category + source chips */}
       <div className="browse-categories">
         {BROWSE_CATEGORIES.map(cat => (
@@ -15440,6 +15490,7 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
   const [scanning, setScanning] = React.useState(false);
   const [deploying, setDeploying] = React.useState<string | null>(null);
   const [importingPlugin, setImportingPlugin] = React.useState(false);
+  const [loadedAt, setLoadedAt] = React.useState<Date | null>(null);
   const pluginFolderInputRef = React.useRef<HTMLInputElement>(null);
 
   // Fetch skill .md content when a skill is selected
@@ -15475,6 +15526,10 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
       .catch(() => setAgents([]));
   }, [props.authToken]);
 
+  React.useEffect(() => {
+    setLoadedAt(new Date());
+  }, [props.skills, props.plugins]);
+
   const allSkills = props.skills;
 
   const librarySkills = allSkills.filter(s => Boolean(s.current_revision) || s.status === 'approved' || s.status === 'installed' || s.status === 'disabled');
@@ -15497,6 +15552,50 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
       deployment: skill.deployments.find(candidate => candidate.agent_id === agentId),
     }));
   });
+
+  const [filters, setFilters] = React.useState<CapabilityFilters>({ q: '', source: 'all', risk: 'all', freshness: 'all', update: 'all', deploy: 'all' });
+
+  function clearFilters() {
+    setFilters({ q: '', source: 'all', risk: 'all', freshness: 'all', update: 'all', deploy: 'all' });
+  }
+
+  function itemSource(item: PodSkill | PodPlugin): string {
+    const revision = item.current_revision ?? item.pending_revision;
+    return ((revision as any)?.origin as string | undefined) ?? item.source;
+  }
+
+  function matchesCapability(kind: 'skill' | 'plugin', item: PodSkill | PodPlugin, section: 'inbox' | 'library'): boolean {
+    const revision = section === 'inbox'
+      ? (item.pending_revision ?? item.current_revision)
+      : (item.current_revision ?? item.pending_revision);
+    if (filters.q) {
+      const hay = `${item.name} ${item.description} ${(revision as any)?.summary ?? ''}`.toLowerCase();
+      if (!hay.includes(filters.q.toLowerCase())) return false;
+    }
+    if (filters.source !== 'all' && itemSource(item) !== filters.source) return false;
+    if (filters.risk !== 'all' && item.trust_level !== filters.risk) return false;
+    if (filters.freshness !== 'all' && freshnessBucket(revision?.created_at) !== filters.freshness) return false;
+    if (filters.update !== 'all') {
+      const waiting = section === 'library' && Boolean(item.pending_revision);
+      if (filters.update === 'waiting' && !waiting) return false;
+      if (filters.update === 'current' && waiting) return false;
+    }
+    if (filters.deploy !== 'all') {
+      if (kind !== 'skill') return false;
+      const synced = (item as PodSkill).deployments.some(deployment => deployment.status === 'synced');
+      if (filters.deploy === 'deployed' && !synced) return false;
+      if (filters.deploy === 'not-deployed' && synced) return false;
+    }
+    return true;
+  }
+
+  const shownInboxSkills = visibleInboxSkills.filter(skill => matchesCapability('skill', skill, 'inbox'));
+  const shownInboxPlugins = visibleInboxPlugins.filter(plugin => matchesCapability('plugin', plugin, 'inbox'));
+  const shownLibrarySkills = visibleLibrarySkills.filter(skill => matchesCapability('skill', skill, 'library'));
+  const shownLibraryPlugins = visibleLibraryPlugins.filter(plugin => matchesCapability('plugin', plugin, 'library'));
+  const filterActive = filters.q !== '' || filters.source !== 'all' || filters.risk !== 'all' || filters.freshness !== 'all' || filters.update !== 'all' || filters.deploy !== 'all';
+  const sourceOptions = [...new Set([...allSkills, ...props.plugins].map(item => itemSource(item)))].filter(Boolean) as string[];
+  const riskOptions = [...new Set([...allSkills, ...props.plugins].map(item => item.trust_level))];
 
   async function scanNativeSkills() {
     setScanning(true);
@@ -15626,6 +15725,8 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
   }
 
   function deploymentTarget(agent?: SkillAgent, fallback?: string): 'codex' | 'claude-code' | null {
+    const harness = (agent?.harness ?? '').toLowerCase();
+    if (harness === 'claude-code' || harness === 'codex') return harness;
     const identity = `${agent?.id ?? fallback ?? ''} ${agent?.name ?? ''}`.toLowerCase();
     if (identity.includes('claude')) return 'claude-code';
     if (identity.includes('codex')) return 'codex';
@@ -15750,17 +15851,27 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
     return skill.equipped_to.some(value => agents.some(agent => agent.id === value || agent.name === value));
   }
 
-  function renderLocalFiles() {
+  function renderLocalFiles(skill: PodSkill) {
+    const verified = skill.deployments.filter(deployment => deployment.status === 'synced');
+    const materialized = verified.length > 0;
+    const targetPaths = verified.map(deployment => deployment.target_path).filter(Boolean);
     return (
       <div className="skill-detail-section">
         <h4>Local files</h4>
         {contentLoading ? (
           <div className="browse-loading-line" />
         ) : skillContent ? (
-          <div className="skill-local-files-status found">
-            <CheckCircle2 size={14} />
-            <span><strong>Directory found</strong><code>{skillContent.directory}</code></span>
-          </div>
+          materialized ? (
+            <div className="skill-local-files-status found">
+              <CheckCircle2 size={14} />
+              <span><strong>Directory found</strong><code>{targetPaths.length > 0 ? targetPaths.join(', ') : `${verified[0].adapter} target`}</code></span>
+            </div>
+          ) : (
+            <div className="skill-local-files-status retained">
+              <HardDrive size={14} />
+              <span><strong>Not materialized</strong>Canonical revision retained in Pod — no agent has a verified copy. Assign an agent and deploy to install files.</span>
+            </div>
+          )
         ) : (
           <div className="skill-local-files-status">
             <AlertTriangle size={14} />
@@ -15805,6 +15916,79 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
     return <Activity size={14} className="telem-icon-info" />;
   }
 
+  function skillTileExtras(skill: PodSkill, section: 'inbox' | 'library') {
+    const revision = section === 'inbox' ? skill.pending_revision : skill.current_revision;
+    const fileCount = revision?.files ? Object.keys(revision.files).length : 0;
+    const synced = skill.deployments.filter(deployment => deployment.status === 'synced').length;
+    return (
+      <>
+        {revision?.created_at && <span className="skill-freshness-chip">{relativeTime(revision.created_at)}</span>}
+        {fileCount > 0 && <span className="skill-count-chip">{fileCount} file{fileCount === 1 ? '' : 's'}</span>}
+        {skill.trust_level !== 'high' && <span className={`skill-risk-chip ${skill.trust_level}`}>Trust: {skill.trust_level}</span>}
+        {section === 'library' && (
+          <span className={`skill-deploy-chip${synced > 0 ? ' synced' : ''}`}>{synced > 0 ? `Deployed ×${synced}` : 'Not deployed'}</span>
+        )}
+      </>
+    );
+  }
+
+  function pluginTileExtras(plugin: PodPlugin, section: 'inbox' | 'library') {
+    const revision = section === 'inbox' ? plugin.pending_revision : plugin.current_revision;
+    const risk = revision?.inspection.risk;
+    const hazards = (risk?.local_executables ?? 0) + (risk?.remote_connections ?? 0);
+    return (
+      <>
+        {revision?.created_at && <span className="skill-freshness-chip">{relativeTime(revision.created_at)}</span>}
+        {risk && hazards > 0 && <span className="skill-risk-chip caution">{risk.local_executables} exec · {risk.remote_connections} remote</span>}
+      </>
+    );
+  }
+
+  function renderSkillChangeDisclosure(skill: PodSkill) {
+    const pending = skill.pending_revision;
+    if (!pending) return null;
+    const prevFiles = skill.current_revision?.files ?? (skill.current_revision?.content ? { 'SKILL.md': skill.current_revision.content } : null);
+    const nextFiles = pending.files ?? (pending.content ? { 'SKILL.md': pending.content } : null);
+    const isFirst = !skill.current_revision;
+    const changes = isFirst ? [] : skillFileDiff(prevFiles, nextFiles);
+    const instructions = changes.filter(change => change.instruction);
+    const resources = changes.filter(change => !change.instruction);
+    const mark = (kind: 'added' | 'changed' | 'removed') => kind === 'added' ? '+' : kind === 'removed' ? '−' : '±';
+    return (
+      <div className="skill-detail-section skill-change-disclosure">
+        <h4>What changed</h4>
+        {isFirst ? (
+          <p className="skill-change-none">First revision — nothing to compare against yet.</p>
+        ) : changes.length === 0 ? (
+          <p className="skill-change-none">No file changes detected against r{skill.current_revision?.revision_number ?? '?'}.</p>
+        ) : (
+          <>
+            <div className="skill-change-group">
+              <span className="skill-change-group-label">Instruction files</span>
+              <div className="skill-change-chips">
+                {instructions.length === 0
+                  ? <span className="skill-change-none">SKILL.md unchanged</span>
+                  : instructions.map(change => (
+                    <span key={change.path} className={`skill-file-change ${change.kind}`}>{mark(change.kind)} {change.path}</span>
+                  ))}
+              </div>
+            </div>
+            <div className="skill-change-group">
+              <span className="skill-change-group-label">Resource files</span>
+              <div className="skill-change-chips">
+                {resources.length === 0
+                  ? <span className="skill-change-none">No resource changes</span>
+                  : resources.map(change => (
+                    <span key={change.path} className={`skill-file-change ${change.kind}`}>{mark(change.kind)} {change.path}</span>
+                  ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   function renderSkillDetail(skill: PodSkill, context: 'inbox' | 'library') {
     const focusRevision = context === 'inbox' ? skill.pending_revision : skill.current_revision;
     return (
@@ -15822,8 +16006,10 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
             <div className="graph-detail-prop"><span>Package</span><strong className="skill-mono-sm">{focusRevision ? focusRevision.content_hash.slice(0, 12) : 'Unavailable'}</strong></div>
             <div className="graph-detail-prop"><span>Origin</span>{sourceBadge(focusRevision?.origin ?? skill.source)}</div>
             <div className="graph-detail-prop"><span>Detected</span><strong>{focusRevision ? relativeTime(focusRevision.created_at) : relativeTime(skill.created_at)}</strong></div>
+            <div className="graph-detail-prop"><span>Proposed by</span><strong>{focusRevision ? `${focusRevision.created_by} · ${relativeTime(focusRevision.created_at)}` : 'Unknown'}</strong></div>
           </div>
         </div>
+        {context === 'inbox' && skill.pending_revision && renderSkillChangeDisclosure(skill)}
         {skill.revisions.length > 0 && (
           <div className="skill-detail-section">
             <h4>Revision history</h4>
@@ -15838,7 +16024,7 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
           </div>
         )}
         {renderAgentAssignments(skill)}
-        {renderLocalFiles()}
+        {renderLocalFiles(skill)}
         {skill.permissions.length > 0 && (
           <div className="skill-detail-section">
             <h4>Permissions</h4>
@@ -15907,12 +16093,36 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
             <div className="graph-detail-prop"><span>Format</span><strong>Agent Plugins {plugin.schema_version}</strong></div>
             <div className="graph-detail-prop"><span>Origin</span>{sourceBadge(plugin.source)}</div>
             <div className="graph-detail-prop"><span>Author</span><strong>{plugin.author}</strong></div>
+            <div className="graph-detail-prop"><span>Proposed by</span><strong>{revision ? `${revision.created_by} · ${relativeTime(revision.created_at)}` : 'Unknown'}</strong></div>
           </div>
         </div>
         {revision && (
           <>
             <div className="skill-detail-section">
               <h4>Capability diff</h4>
+              {(() => {
+                const changes = context === 'inbox' && plugin.current_revision
+                  ? pluginComponentDiff(plugin.current_revision.components, revision.components)
+                  : null;
+                if (changes) {
+                  return changes.length === 0 ? (
+                    <p className="skill-change-none">No component changes detected against r{plugin.current_revision?.revision_number ?? '?'}.</p>
+                  ) : (
+                    <div className="plugin-component-diff">
+                      {changes.map(change => (
+                        <div key={change.key} className={`plugin-component-change ${change.kind}`}>
+                          <span className="plugin-component-type">{change.type === 'mcp_server' ? 'MCP' : change.type}</span>
+                          <strong>{change.componentKey}</strong>
+                          <span className="plugin-component-change-kind">
+                            {change.kind === 'added' ? 'added' : change.kind === 'removed' ? 'removed' : `${change.from} → ${change.to}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+                return <p className="skill-change-none">First revision — no baseline to compare; composition below.</p>;
+              })()}
               <div className="plugin-capability-summary">
                 <div><strong>{grouped.skills.length}</strong><span>Skills</span></div>
                 <div><strong>{grouped.mcp.length}</strong><span>MCP servers</span></div>
@@ -16029,6 +16239,34 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
           ))}
         </div>
       )}
+      {section !== 'discover' && section !== 'deployments' && (
+        <div className="capability-filter-bar">
+          <div className="browse-search-row capability-filter-search">
+            <Search size={14} className="browse-search-icon" />
+            <input value={filters.q} onChange={event => setFilters(prev => ({ ...prev, q: event.target.value }))} placeholder="Filter capabilities…" aria-label="Filter capabilities" />
+            {filters.q && <button className="browse-search-clear" onClick={() => setFilters(prev => ({ ...prev, q: '' }))}><X size={12} /></button>}
+          </div>
+          {sourceOptions.length > 1 && (
+            <AppSelect className="capability-filter-select" value={filters.source} onChange={value => setFilters(prev => ({ ...prev, source: value }))}
+              options={[{ value: 'all', label: 'Any source' }, ...sourceOptions.map(source => ({ value: source, label: source }))]} />
+          )}
+          {riskOptions.length > 1 && (
+            <AppSelect className="capability-filter-select" value={filters.risk} onChange={value => setFilters(prev => ({ ...prev, risk: value }))}
+              options={[{ value: 'all', label: 'Any trust' }, ...riskOptions.map(risk => ({ value: risk, label: `Trust: ${risk}` }))]} />
+          )}
+          <AppSelect className="capability-filter-select" value={filters.freshness} onChange={value => setFilters(prev => ({ ...prev, freshness: value as CapabilityFilters['freshness'] }))}
+            options={[{ value: 'all', label: 'Any time' }, { value: 'fresh', label: 'Fresh (< 24h)' }, { value: 'recent', label: 'Recent (< 7d)' }, { value: 'stale', label: 'Older' }]} />
+          {section === 'library' && (
+            <AppSelect className="capability-filter-select" value={filters.update} onChange={value => setFilters(prev => ({ ...prev, update: value as CapabilityFilters['update'] }))}
+              options={[{ value: 'all', label: 'Any update state' }, { value: 'waiting', label: 'Update waiting' }, { value: 'current', label: 'Up to date' }]} />
+          )}
+          {section === 'library' && (
+            <AppSelect className="capability-filter-select" value={filters.deploy} onChange={value => setFilters(prev => ({ ...prev, deploy: value as CapabilityFilters['deploy'] }))}
+              options={[{ value: 'all', label: 'Any deployment' }, { value: 'deployed', label: 'Deployed' }, { value: 'not-deployed', label: 'Not deployed' }]} />
+          )}
+          {filterActive && <button className="capability-filter-clear" onClick={clearFilters}>Clear</button>}
+        </div>
+      )}
       {actionError && !selectedSkill && !selectedPlugin && section !== 'deployments' && (
         <div className="skill-action-error capability-global-error">{actionError}</div>
       )}
@@ -16050,7 +16288,41 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
       {section === 'inbox' && (
         <div className={`skills-body ${selectedSkill || selectedPlugin ? 'has-detail' : ''}`}>
           <div className="skills-list-scroll">
-            {visibleInboxSkills.length + visibleInboxPlugins.length === 0 ? (
+            {loadedAt && (
+              <div className="capability-freshness-strip list" role="status">
+                <Clock size={12} />
+                <span>Last updated {clockTime(loadedAt)} — refreshes after actions.</span>
+              </div>
+            )}
+            {shownInboxSkills.length + shownInboxPlugins.length === 0 ? (
+              filterActive ? (
+                <div className="activity-empty">
+                  <Search size={28} />
+                  <strong>No matches</strong>
+                  <p>No capabilities match the current filters.</p>
+                  <div className="capability-empty-actions">
+                    <button className="skill-action-btn" onClick={clearFilters}>Clear filters</button>
+                  </div>
+                </div>
+              ) : capabilityType === 'skill' ? (
+                <div className="activity-empty">
+                  <GitBranch size={28} />
+                  <strong>No skills in the Inbox</strong>
+                  <p>Scan connected agents for new Skill packages.</p>
+                  <div className="capability-empty-actions">
+                    <button className="skill-action-btn primary" onClick={scanNativeSkills} disabled={scanning}>Scan agents</button>
+                  </div>
+                </div>
+              ) : capabilityType === 'plugin' ? (
+                <div className="activity-empty">
+                  <Layers size={28} />
+                  <strong>No plugins in the Inbox</strong>
+                  <p>Import an Agent Plugin package to review it here.</p>
+                  <div className="capability-empty-actions">
+                    <button className="skill-action-btn primary" onClick={() => pluginFolderInputRef.current?.click()} disabled={importingPlugin}>Import Plugin</button>
+                  </div>
+                </div>
+              ) : (
               <div className="activity-empty">
                 <Inbox size={28} />
                 <strong>Inbox clear</strong>
@@ -16060,9 +16332,16 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
                   <button className="skill-action-btn" onClick={() => pluginFolderInputRef.current?.click()} disabled={importingPlugin}>Import Plugin</button>
                 </div>
               </div>
+              )
             ) : (
               <div className="skill-tile-grid">
-                {visibleInboxPlugins.map(plugin => {
+                {capabilityType !== 'all' && (
+                  <div className="capability-subview-heading">
+                    <strong>{capabilityType === 'skill' ? 'Skills' : 'Plugins'}</strong>
+                    <span>{capabilityType === 'skill' ? shownInboxSkills.length : shownInboxPlugins.length} in Inbox</span>
+                  </div>
+                )}
+                {shownInboxPlugins.map(plugin => {
                   const revision = plugin.pending_revision;
                   return (
                     <button key={plugin.id} className={`skill-tile plugin-tile ${selectedPlugin?.id === plugin.id ? 'selected' : ''}`} onClick={() => { setSelectedPlugin(plugin); setSelectedSkill(null); }}>
@@ -16080,11 +16359,12 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
                       <div className="skill-tile-footer">
                         {sourceBadge(plugin.source)}
                         {revision && <span className="skill-status-badge skill-draft-badge">Draft v{revision.version}</span>}
+                        {pluginTileExtras(plugin, 'inbox')}
                       </div>
                     </button>
                   );
                 })}
-                {visibleInboxSkills.map(skill => {
+                {shownInboxSkills.map(skill => {
                   const revision = skill.pending_revision;
                   return (
                     <button key={skill.id} className={`skill-tile ${selectedSkill?.id === skill.id ? 'selected' : ''}`} onClick={() => { setSelectedSkill(skill); setSelectedPlugin(null); }}>
@@ -16098,6 +16378,7 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
                       <div className="skill-tile-footer">
                         {sourceBadge(revision?.origin ?? skill.source)}
                         {revision && <span className="skill-status-badge skill-draft-badge">Draft v{revision.version}</span>}
+                        {skillTileExtras(skill, 'inbox')}
                       </div>
                     </button>
                   );
@@ -16113,7 +16394,41 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
       {section === 'library' && (
         <div className={`skills-body ${selectedSkill || selectedPlugin ? 'has-detail' : ''}`}>
           <div className="skills-list-scroll">
-            {visibleLibrarySkills.length + visibleLibraryPlugins.length === 0 ? (
+            {loadedAt && (
+              <div className="capability-freshness-strip list" role="status">
+                <Clock size={12} />
+                <span>Last updated {clockTime(loadedAt)} — refreshes after actions.</span>
+              </div>
+            )}
+            {shownLibrarySkills.length + shownLibraryPlugins.length === 0 ? (
+              filterActive ? (
+                <div className="activity-empty">
+                  <Search size={28} />
+                  <strong>No matches</strong>
+                  <p>No capabilities match the current filters.</p>
+                  <div className="capability-empty-actions">
+                    <button className="skill-action-btn" onClick={clearFilters}>Clear filters</button>
+                  </div>
+                </div>
+              ) : capabilityType === 'skill' ? (
+                <div className="activity-empty">
+                  <LibraryBig size={28} />
+                  <strong>No skills in the Library</strong>
+                  <p>Approve an Inbox revision or discover a Skill to build your Library.</p>
+                  <div className="capability-empty-actions">
+                    <button className="skill-action-btn primary" onClick={() => setSection('discover')}>Discover Skills</button>
+                  </div>
+                </div>
+              ) : capabilityType === 'plugin' ? (
+                <div className="activity-empty">
+                  <Layers size={28} />
+                  <strong>No plugins in the Library</strong>
+                  <p>Import an Agent Plugin package and approve it to keep it here.</p>
+                  <div className="capability-empty-actions">
+                    <button className="skill-action-btn primary" onClick={() => pluginFolderInputRef.current?.click()}>Import Plugin</button>
+                  </div>
+                </div>
+              ) : (
               <div className="activity-empty">
                 <LibraryBig size={28} />
                 <strong>Your Capability Library is empty</strong>
@@ -16123,9 +16438,16 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
                   <button className="skill-action-btn" onClick={() => pluginFolderInputRef.current?.click()}>Import Plugin</button>
                 </div>
               </div>
+              )
             ) : (
               <div className="skill-tile-grid">
-                {visibleLibraryPlugins.map(plugin => (
+                {capabilityType !== 'all' && (
+                  <div className="capability-subview-heading">
+                    <strong>{capabilityType === 'skill' ? 'Skills' : 'Plugins'}</strong>
+                    <span>{capabilityType === 'skill' ? shownLibrarySkills.length : shownLibraryPlugins.length} in Library</span>
+                  </div>
+                )}
+                {shownLibraryPlugins.map(plugin => (
                   <button key={plugin.id} className={`skill-tile plugin-tile ${selectedPlugin?.id === plugin.id ? 'selected' : ''}`} onClick={() => { setSelectedPlugin(plugin); setSelectedSkill(null); }}>
                     <div className="skill-tile-header">
                       <div className="skill-tile-icon plugin"><Layers size={18} /></div>
@@ -16142,10 +16464,11 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
                       {sourceBadge(plugin.source)}
                       {statusBadge(plugin.status)}
                       {plugin.pending_revision && <span className="skill-update-chip">Update waiting</span>}
+                      {pluginTileExtras(plugin, 'library')}
                     </div>
                   </button>
                 ))}
-                {visibleLibrarySkills.map(skill => (
+                {shownLibrarySkills.map(skill => (
                   <button key={skill.id} className={`skill-tile ${selectedSkill?.id === skill.id ? 'selected' : ''}`} onClick={() => { setSelectedSkill(skill); setSelectedPlugin(null); }}>
                     <div className="skill-tile-header">
                       <div className="skill-tile-icon"><LibraryBig size={18} /></div>
@@ -16158,6 +16481,7 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
                       {sourceBadge(skill.current_revision?.origin ?? skill.source)}
                       {statusBadge(skill.status)}
                       {skill.pending_revision && <span className="skill-update-chip">Update waiting</span>}
+                      {skillTileExtras(skill, 'library')}
                     </div>
                   </button>
                 ))}
@@ -16216,6 +16540,9 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
                             {deploying === key ? <Loader2 size={12} className="spin-inline" /> : <CloudUpload size={12} />}
                             Deploy
                           </button>
+                        )}
+                        {!target && hasPackage && state !== 'synced' && (
+                          <span className="skill-deployment-note">No supported adapter for this agent — deploy targets are Codex or Claude Code.</span>
                         )}
                       </div>
                       {deployment?.last_error && <div className="skill-deployment-error">{deployment.last_error}</div>}

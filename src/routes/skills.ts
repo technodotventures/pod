@@ -698,9 +698,9 @@ export async function registerSkillRoutes(app: FastifyInstance, env: CoffeePodEn
   let skillsShCache: { skills: any[]; fetchedAt: number } | null = null;
   const SKILLSSH_CACHE_TTL = 5 * 60 * 1000; // 5 min
 
-  async function fetchSkillsShCatalog(): Promise<any[]> {
+  async function fetchSkillsShCatalog(): Promise<{ skills: any[]; fetchedAt: number; cached: boolean }> {
     if (skillsShCache && Date.now() - skillsShCache.fetchedAt < SKILLSSH_CACHE_TTL) {
-      return skillsShCache.skills;
+      return { skills: skillsShCache.skills, fetchedAt: skillsShCache.fetchedAt, cached: true };
     }
     const res = await fetch('https://www.skills.sh/', {
       headers: { 'RSC': '1', 'Accept': 'text/x-component', 'User-Agent': 'CoffeePod/0.1' },
@@ -710,7 +710,7 @@ export async function registerSkillRoutes(app: FastifyInstance, env: CoffeePodEn
     const text = await res.text();
     const skills = extractJsonArrayField(text, 'initialSkills');
     skillsShCache = { skills, fetchedAt: Date.now() };
-    return skills;
+    return { skills, fetchedAt: skillsShCache.fetchedAt, cached: false };
   }
 
   app.get('/pod/skills/registry/skillssh/*', {
@@ -720,7 +720,7 @@ export async function registerSkillRoutes(app: FastifyInstance, env: CoffeePodEn
     const qs = new URL(request.url, 'http://localhost').search;
     const params = new URLSearchParams(qs);
     try {
-      const allSkills = await fetchSkillsShCatalog();
+      const { skills: allSkills, fetchedAt: catalogFetchedAt, cached: catalogCached } = await fetchSkillsShCatalog();
       const q = params.get('q')?.toLowerCase();
       const view = params.get('view') ?? 'trending';
       let filtered = [...allSkills];
@@ -740,7 +740,7 @@ export async function registerSkillRoutes(app: FastifyInstance, env: CoffeePodEn
       }
 
       const limit = Math.min(Number(params.get('limit') ?? 24), 100);
-      reply.send({ skills: filtered.slice(0, limit), total: filtered.length });
+      reply.send({ skills: filtered.slice(0, limit), total: filtered.length, fetched_at: new Date(catalogFetchedAt).toISOString(), cached: catalogCached });
     } catch (err) {
       reply.code(502).send({ error: 'registry_unavailable', upstream: 'skillssh', detail: String(err) });
     }

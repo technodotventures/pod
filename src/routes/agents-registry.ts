@@ -229,7 +229,11 @@ export async function registerAgentRegistryRoutes(app: FastifyInstance, env: Cof
     }
 
     // Tag the named ones with discovered: false for symmetry on the client.
-    const enrichedNamed = named.map(a => ({ ...a, discovered: false as const }));
+    const enrichedNamed = named.map(a => ({
+      ...a,
+      discovered: false as const,
+      harness: readHarnessProfileMetadata(a.metadata)?.harness_id ?? null,
+    }));
     const core = await getSmartwareCore(env);
     const selectedScopes = named.flatMap(agent => agent.scopes ?? []);
     return {
