@@ -19,9 +19,12 @@
         "is-complete",
         "is-open",
         "is-valid",
+        "needs-save",
         "plugin-tile",
+        "pod-loader--*",
         "pod-loader__*",
-        "pod-onboarding-*"
+        "pod-onboarding-*",
+        "upcoming"
       ]
     }],
     "shadcn/no-inline-styles": "off",
