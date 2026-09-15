@@ -236,8 +236,18 @@ export async function syncSmartwareLLMConfig(env: CoffeePodEnv, core: SmartwareC
   // Smartware's embedded extractor does not speak the Codex app-server
   // protocol. Pod-level Ask/reflection can still use Codex; the substrate
   // remains model-free rather than receiving an invalid provider value.
-  const nextProvider = active?.id === 'codex' ? 'none' : active?.id ?? 'none';
-  const nextModel = active?.id === 'codex' ? '' : active?.model ?? '';
+  let nextProvider = active?.id === 'codex' ? 'none' : active?.id ?? 'none';
+  let nextModel = active?.id === 'codex' ? '' : active?.model ?? '';
+  // DeepSeek: the substrate extractor speaks DeepSeek natively (OpenAI-
+  // compatible at api.deepseek.com), but DeepSeek is not one of the Pod UI's
+  // provider integrations. Source it from the environment and use it only
+  // when no Pod-level provider is selected for AI, so an explicit UI choice
+  // still wins.
+  const deepseekKey = process.env['DEEPSEEK_API_KEY']?.trim();
+  if (nextProvider === 'none' && deepseekKey) {
+    nextProvider = 'deepseek';
+    nextModel = process.env['DEEPSEEK_MODEL']?.trim() || 'deepseek-chat';
+  }
   if (config.llm.provider === nextProvider && config.llm.model === nextModel) {
     return active;
   }
