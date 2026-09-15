@@ -9188,8 +9188,15 @@ pre {
 .skill-tile-footer {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: auto;
+  min-width: 0;
+}
+
+.skill-tile-footer .skill-status-badge,
+.skill-tile-footer .skill-update-chip {
+  white-space: nowrap;
 }
 
 /* ── Skill Rows ── */
@@ -24117,4 +24124,124 @@ html[data-theme="light"] .skel-bone {
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════
+   Run 007 — capability audit improvements
+   (freshness, diffs, filters, sub-views)
+   ═══════════════════════════════════════════ */
+
+.capability-freshness-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--bg-2, rgba(255, 255, 255, 0.03));
+  color: var(--fg-3, #8a8f98);
+  font-size: 11.5px;
+}
+.capability-freshness-strip.list { margin: 2px 0 10px; }
+.capability-freshness-strip .freshness-note { font-style: italic; }
+.capability-freshness-strip .freshness-warn {
+  color: var(--coffee-amber, #e0a526);
+  font-weight: 600;
+}
+
+.skill-freshness-chip,
+.skill-count-chip,
+.skill-deploy-chip {
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border-2, rgba(255, 255, 255, 0.12));
+  color: var(--fg-3, #8a8f98);
+  white-space: nowrap;
+}
+.skill-deploy-chip.synced {
+  color: var(--coffee-green, #35c26b);
+  border-color: currentColor;
+}
+
+.skill-risk-chip {
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--coffee-amber, #e0a526);
+  color: var(--coffee-amber, #e0a526);
+  white-space: nowrap;
+}
+.skill-risk-chip.blocked {
+  border-color: var(--coffee-red, #e5484d);
+  color: var(--coffee-red, #e5484d);
+}
+
+.skill-change-disclosure .skill-change-group { margin: 6px 0 10px; }
+.skill-change-group-label {
+  display: block;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-4, #6b7280);
+  margin-bottom: 4px;
+}
+.skill-change-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.skill-file-change {
+  font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-2, rgba(255, 255, 255, 0.12));
+}
+.skill-file-change.added { color: var(--coffee-green, #35c26b); border-color: currentColor; }
+.skill-file-change.removed { color: var(--coffee-red, #e5484d); border-color: currentColor; }
+.skill-file-change.changed { color: var(--coffee-amber, #e0a526); border-color: currentColor; }
+.skill-change-none { font-size: 12px; color: var(--fg-4, #6b7280); margin: 2px 0; }
+
+.plugin-component-diff { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.plugin-component-change { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.plugin-component-change.added strong { color: var(--coffee-green, #35c26b); }
+.plugin-component-change.removed strong { color: var(--coffee-red, #e5484d); text-decoration: line-through; }
+.plugin-component-change.status_changed strong { color: var(--coffee-amber, #e0a526); }
+.plugin-component-change-kind { font-size: 11px; color: var(--fg-3, #8a8f98); }
+
+.skill-local-files-status.retained { color: var(--fg-2, #c9ccd1); }
+
+.capability-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0 10px;
+}
+.capability-filter-search { flex: 1 1 220px; min-width: 180px; }
+.capability-filter-search input { width: 100%; }
+.capability-filter-select { min-width: 132px; }
+.capability-filter-clear {
+  background: none;
+  border: 1px solid var(--border-2, rgba(255, 255, 255, 0.14));
+  color: var(--fg-3, #8a8f98);
+  font-size: 11.5px;
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.capability-filter-clear:hover { color: var(--fg-1, #fff); }
+
+.capability-subview-heading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 2px 0 4px;
+}
+.capability-subview-heading strong { font-size: 13px; }
+.capability-subview-heading span { font-size: 11.5px; color: var(--fg-4, #6b7280); }
+
+.skill-deployment-note {
+  font-size: 11px;
+  color: var(--fg-4, #6b7280);
+  max-width: 230px;
 }

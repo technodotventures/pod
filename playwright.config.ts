@@ -37,6 +37,9 @@ export default defineConfig({
     { name: 'cockpit', testMatch: /cockpit\.spec\.ts/, dependencies: ['setup'] },
     { name: 'a11y', testMatch: /a11y\.spec\.ts/, dependencies: ['setup'] },
     { name: 'visual', testMatch: /visual\.spec\.ts/, dependencies: ['setup'] },
+    // Runs LAST — it seeds a capability, which would change the empty-state
+    // assertions the projects above rely on.
+    { name: 'capabilities', testMatch: /capabilities\.spec\.ts/, dependencies: ['setup'] },
   ],
   webServer: {
     command: 'rm -rf .e2e-data && npm run dev:all',
