@@ -39,7 +39,7 @@ export function OnboardingWizard({
   }
 
   return (
-    <div className="onboarding-wizard" style={{ maxWidth: 560, margin: '40px auto', padding: 24, background: 'white', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+    <div style={{ maxWidth: 560, margin: '40px auto', padding: 24, background: 'white', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
       <StepIndicator current={step} />
       {step === 'welcome' && <WelcomeStep onNext={next} />}
       {step === 'identity' && <IdentityStep value={identity} onChange={setIdentity} onNext={next} />}

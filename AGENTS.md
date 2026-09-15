@@ -32,3 +32,10 @@ When Pod consumes a new Smartware release, update
 snapshot, and run the vendor verification and complete beta gate. “Latest”
 means the latest reviewed stable Smartware release, never an unreviewed
 floating branch.
+
+## Design lint
+
+After making changes, run `npm run lint` and fix all errors — it runs the
+typecheck plus the design lint (`@shadcn/lint` via oxlint; scoped rules and
+allowlist in `.oxlintrc.json`). Design rules and approved exceptions: `DESIGN.md`.
+`npm run lint:design` runs the design lint alone.

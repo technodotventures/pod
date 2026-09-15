@@ -24,11 +24,11 @@ const buttonVariants = cva(
           "bg-transparent text-muted-foreground hover:bg-surface-3 hover:text-foreground",
       },
       size: {
-        default: "h-[34px] px-[18px] rounded-full text-sm",
+        default: "h-8.5 px-4.5 rounded-full text-sm",
         sm: "h-7 px-2.5 rounded-full text-xs font-bold",
         lg: "h-10 px-6 rounded-full text-sm",
-        icon: "size-[34px] rounded-[10px]",
-        "icon-sm": "size-[26px] rounded-[7px]",
+        icon: "size-8.5 rounded-md",
+        "icon-sm": "size-6.5 rounded-sm",
       },
     },
     defaultVariants: {

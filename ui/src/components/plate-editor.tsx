@@ -460,7 +460,7 @@ function BlockWrapper({ element, children: innerContent }: { element: any; child
       className="plate-block-row"
     >
       <div className="plate-block-controls" contentEditable={false}>
-        <button className="plate-block-btn plate-block-add" onMouseDown={handleAdd} title="Add block below">
+        <button className="plate-block-btn" onMouseDown={handleAdd} title="Add block below">
           <Plus size={14} />
         </button>
         <button

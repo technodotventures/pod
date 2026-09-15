@@ -395,7 +395,7 @@ export function SynthesisView(): React.ReactElement {
   };
 
   return (
-    <div className="synthesis-view" style={{ maxWidth: 960, margin: '0 auto', padding: 24, display: 'grid', gridTemplateColumns: '280px 1fr', gap: 24 }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: 24, display: 'grid', gridTemplateColumns: '280px 1fr', gap: 24 }}>
       <aside>
         <h2>Your Writing</h2>
         <p style={{ fontSize: '0.85em', color: '#666' }}>
@@ -459,7 +459,7 @@ export function AgentPagesView({ actorId }: { actorId: string }): React.ReactEle
   }, [load]);
 
   return (
-    <div className="agent-pages-view" style={{ maxWidth: 960, margin: '0 auto', padding: 24 }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: 24 }}>
       <h1>What the substrate has learned</h1>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {(['concepts', 'entities', 'decisions'] as const).map((c) => (

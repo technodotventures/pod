@@ -3657,7 +3657,7 @@ function App() {
       </aside>
 
       {/* ── Main Content ── */}
-      <div className={`app-body-wrap ${showAIChat ? 'ai-chat-open' : ''}`}>
+      <div className={"app-body-wrap"}>
         <div className="app-body">
           <main className="main" key={activeWorkspaceId}>
             <div className="main-scroll">
@@ -3855,7 +3855,6 @@ function CoffeeLogo({ height = 16 }: { height?: number }) {
     <img
       src="/brand/coffee-logo-text.png"
       alt="Coffee"
-      className="coffee-logo-img"
       style={{ height, display: 'inline-block', verticalAlign: 'middle' }}
     />
   );
@@ -6801,7 +6800,7 @@ function GraphView(props: { onOpenInMemories?: (payload: OpenInMemoriesPayload) 
     : null;
 
   const memoryModeToolbar = props.memoryViewMode ? (
-    <div className="graph-toolbar memories-content-toolbar graph-toolbar-minimal">
+    <div className="graph-toolbar memories-content-toolbar">
       <div className="graph-toolbar-left">
         <div className="graph-toolbar-title"><h2>Map</h2></div>
       </div>
@@ -7052,7 +7051,7 @@ function GraphView(props: { onOpenInMemories?: (payload: OpenInMemoriesPayload) 
         {viewMode === '2d' && (
         <svg
           ref={svgRef}
-          className="graph-svg graph-svg-overlay"
+          className="graph-svg"
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleCanvasMouseMove}
           onMouseLeave={handleNodeMouseLeave}
@@ -7143,7 +7142,7 @@ function GraphView(props: { onOpenInMemories?: (payload: OpenInMemoriesPayload) 
               if (points.length < 2) return null;
               const pathD = points.reduce((acc, p, i) => acc + (i === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`), '');
               return (
-                <g className="graph-trace-overlay" pointerEvents="none">
+                <g pointerEvents="none">
                   <path d={pathD} fill="none" stroke="rgba(220, 240, 235, 0.9)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                   {points.map((p, i) => (
                     <circle key={`tp-${i}`} cx={p.x} cy={p.y} r={7} fill="none" stroke="rgba(220, 240, 235, 0.85)" strokeWidth={1.5} />
@@ -7187,7 +7186,7 @@ function GraphView(props: { onOpenInMemories?: (payload: OpenInMemoriesPayload) 
                   <g
                     key={node.id}
                     opacity={opacity}
-                    className={`graph-node-g${isSelected ? ' selected' : ''}${isMultiSelected ? ' multi-selected' : ''}${isHovered ? ' hovered' : ''}${highlightedCitationNodeId === node.id ? ' citation-pulse' : ''}`}
+                    className={`graph-node-g${isSelected ? ' selected' : ''}${isMultiSelected ? ' multi-selected' : ''}${highlightedCitationNodeId === node.id ? ' citation-pulse' : ''}`}
                     data-node-id={node.id}
                     onMouseDown={(e) => handleMouseDown(e, node.id)}
                     onDoubleClick={(e) => {
@@ -7251,7 +7250,7 @@ function GraphView(props: { onOpenInMemories?: (payload: OpenInMemoriesPayload) 
                 <g
                   key={node.id}
                   opacity={opacity}
-                  className={`graph-node-g${isSelected ? ' selected' : ''}${isMultiSelected ? ' multi-selected' : ''}${isHovered ? ' hovered' : ''}${highlightedCitationNodeId === node.id ? ' citation-pulse' : ''}`}
+                  className={`graph-node-g${isSelected ? ' selected' : ''}${isMultiSelected ? ' multi-selected' : ''}${highlightedCitationNodeId === node.id ? ' citation-pulse' : ''}`}
                   data-node-id={node.id}
                   onMouseDown={(e) => handleMouseDown(e, node.id)}
                   onDoubleClick={(e) => {
@@ -11944,7 +11943,7 @@ function DocsView(rawProps: { objects: PodObject[]; collections: PodCollection[]
 
       return (
         <React.Fragment key={folder.id}>
-          <div className="docs-tree-folder-wrap" style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }}>
             {isDropAbove && <div className="drop-indicator drop-indicator-above" style={{ left: 12 + depth * 16 }} />}
             <div
               role="button"
@@ -12885,7 +12884,7 @@ function DocsView(rawProps: { objects: PodObject[]; collections: PodCollection[]
                       {isExpanded && folderDocs.map(doc => (
                         <div key={doc.id} className="docs-table-row-wrap" style={{ position: 'relative' }}>
                           {dropTarget === doc.id && dropPosition === 'above' && <div className="drop-indicator drop-indicator-above" />}
-                          <div role="button" tabIndex={0} className={`docs-table-row doc-row nested-doc ${selectedDocId === doc.id ? 'selected' : ''} ${checkedIds.has(doc.id) ? 'checked' : ''}`} onClick={() => { setSelectedDocId(doc.id); setActiveFolderId(f.id); setSidebarRevealed(true); }}
+                          <div role="button" tabIndex={0} className={`docs-table-row nested-doc ${selectedDocId === doc.id ? 'selected' : ''} ${checkedIds.has(doc.id) ? 'checked' : ''}`} onClick={() => { setSelectedDocId(doc.id); setActiveFolderId(f.id); setSidebarRevealed(true); }}
                             onKeyDown={(e) => {
                               if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
                               e.preventDefault();
@@ -12950,7 +12949,7 @@ function DocsView(rawProps: { objects: PodObject[]; collections: PodCollection[]
                 return (
                   <div key={doc.id} className="docs-table-row-wrap" style={{ position: 'relative' }}>
                     {dropTarget === doc.id && dropPosition === 'above' && <div className="drop-indicator drop-indicator-above" />}
-                    <div role="button" tabIndex={0} className={`docs-table-row doc-row ${selectedDocId === doc.id ? 'selected' : ''} ${checkedIds.has(doc.id) ? 'checked' : ''}`} onClick={() => { setSelectedDocId(doc.id); setSidebarRevealed(true); }}
+                    <div role="button" tabIndex={0} className={`docs-table-row ${selectedDocId === doc.id ? 'selected' : ''} ${checkedIds.has(doc.id) ? 'checked' : ''}`} onClick={() => { setSelectedDocId(doc.id); setSidebarRevealed(true); }}
                       onKeyDown={(e) => {
                         if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
                         e.preventDefault();
@@ -15370,7 +15369,7 @@ function SkillsBrowseTab({
                     <span className="browse-card-author">by {skill.ownerHandle}</span>
                   </div>
                   <div className="browse-card-badges">
-                    {(() => { const cat = inferCategory(skill); return cat ? <span className="browse-type-chip browse-category-chip">{cat}</span> : null; })()}
+                    {(() => { const cat = inferCategory(skill); return cat ? <span className="browse-type-chip">{cat}</span> : null; })()}
                     <span className={`browse-source-chip ${skill._source}`}>
                       {SOURCE_ICONS[skill._source] && <img src={SOURCE_ICONS[skill._source]} alt="" />}
                       {SOURCE_LABELS[skill._source]}
@@ -15716,7 +15715,7 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
       binding: skill.agent_bindings.find(candidate => candidate.agent_id === value),
     }));
     return (
-      <div className="skill-detail-section skill-agent-assignments">
+      <div className="skill-detail-section">
         <div className="skill-detail-section-heading">
           <h4>Assigned agents</h4>
           <button className="skill-manage-agents-btn" onClick={() => openAgentManager(skill)}>Manage</button>
@@ -15729,7 +15728,7 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
                 <span key={value} className={`skill-agent-chip${agent ? '' : ' legacy'}`}>
                   {skillAgentLogo(agent?.id ?? value, 15)}
                   {agent?.name ?? value}
-                  <span className={`skill-agent-chip-state ${assignmentState}`}>
+                  <span className={`skill-agent-chip-state ${assignmentState === 'needs-save' ? '' : assignmentState}`}>
                     {assignmentState.replace('-', ' ')}
                   </span>
                 </span>
@@ -15891,7 +15890,7 @@ function CapabilitiesView(props: { skills: PodSkill[]; plugins: PodPlugin[]; aut
       extensions: revision?.components.filter(component => component.component_type === 'extension') ?? [],
     };
     return (
-      <div className="skill-detail-panel plugin-detail-panel">
+      <div className="skill-detail-panel">
         <div className="skill-detail-top">
           <button className="activity-detail-close" onClick={() => setSelectedPlugin(null)}><X size={16} /></button>
         </div>
@@ -18691,7 +18690,7 @@ function SettingsWorkspaces(props: {
           />
         ))}
         {adding && (
-          <div className="settings-workspace-row settings-workspace-new">
+          <div className="settings-workspace-row">
             <WorkspaceEmojiPicker value={emoji} onChange={setEmoji} label="Choose new workspace icon" />
             <input
               className="settings-input settings-workspace-name"

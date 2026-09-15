@@ -601,7 +601,7 @@ function ProviderStep({ config, onUpdate, fetchImpl }: { config: ExpandedConfig;
   return (
     <>
       <StepHeading label="Model · Optional" title="Choose a model. Or don’t." body="A model helps Pod turn new activity into reusable memory. Agents work without one." />
-      <div className="pod-onboarding-choice-grid pod-onboarding-provider-grid">
+      <div className="pod-onboarding-choice-grid">
         {providers.map(provider => (
           <button key={provider.id} className={config.llm_provider === provider.id ? 'is-selected' : ''} onClick={() => selectProvider(provider.id)}>
             <span><Cloud size={17} /></span><strong>{provider.title}</strong><small>{provider.body}</small>{config.llm_provider === provider.id && <Check size={14} />}

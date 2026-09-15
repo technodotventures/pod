@@ -51,7 +51,7 @@ export function HistoryView(): React.ReactElement {
   }, [load]);
 
   return (
-    <div className="history-view" style={{ maxWidth: 1080, margin: '0 auto', padding: 24 }}>
+    <div style={{ maxWidth: 1080, margin: '0 auto', padding: 24 }}>
       <h1>History</h1>
       <p style={{ color: '#666', fontSize: '0.9em' }}>
         Canonical operations log. Includes autonomous REFLECT silent returns and ACCESS denials.

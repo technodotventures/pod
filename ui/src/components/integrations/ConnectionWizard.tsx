@@ -110,9 +110,9 @@ export function ConnectionWizard<TState>({
           {steps.map((s, i) => {
             const status = i < stepIndex ? 'done' : i === stepIndex ? 'current' : 'upcoming';
             return (
-              <li key={s.id} className={`conn-wizard-progress-step ${status}`}>
+              <li key={s.id} className={`conn-wizard-progress-step ${status === 'upcoming' ? '' : status}`}>
                 <span className="conn-wizard-progress-dot">{status === 'done' ? <Check size={12} /> : i + 1}</span>
-                <span className="conn-wizard-progress-label">{s.title}</span>
+                <span >{s.title}</span>
               </li>
             );
           })}

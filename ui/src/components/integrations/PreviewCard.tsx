@@ -89,7 +89,7 @@ function DocumentPreviewCard({ obs }: { obs: ObservationPreview }) {
     : 'File';
 
   return (
-    <article className="preview-card document">
+    <article className="preview-card">
       <div className="preview-card-head">
         <span className="preview-card-kind"><FileText size={13} /> {kind}</span>
         <ScopeBadge scope={obs.scope} />

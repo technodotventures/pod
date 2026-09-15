@@ -157,8 +157,8 @@ export function EndorsementModal({
   if (!open) return null;
 
   return (
-    <div className="endorsement-modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="endorsement-modal" style={{ background: 'white', padding: 24, borderRadius: 8, maxWidth: 560, width: '90%' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: 'white', padding: 24, borderRadius: 8, maxWidth: 560, width: '90%' }}>
         <h2>{isReConfirm ? 'Re-confirm endorsement' : 'Endorse this page'}</h2>
         {phase === 'loading' && <p>Computing cascade preview…</p>}
         {phase === 'error' && (
