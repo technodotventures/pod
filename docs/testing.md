@@ -5,7 +5,8 @@ Two layers, one command set. Everything below is free tooling — no paid servic
 ## Unit + integration (node:test)
 
 - `npm test` — builds, then runs `dist/test/**/*.test.js` on Node's built-in runner.
-- `npm run beta:gate` — the full gate: typecheck + unit tests + UI build + acceptance script.
+- `npm run lint:design` — the design-system lint (`@shadcn/lint` via oxlint; rules + allowlist in `.oxlintrc.json`). Part of `npm run lint` and the beta gate.
+- `npm run beta:gate` — the full gate: typecheck + design lint + unit tests + UI build + acceptance script.
 
 ## E2E (Playwright, chromium)
 

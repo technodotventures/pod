@@ -1,0 +1,34 @@
+{
+  "jsPlugins": ["@shadcn/lint"],
+  "settings": {
+    "shadcn": {
+      "ui": "@/components/ui",
+      "componentImports": ["^@/components(/|$)"],
+      "note": "See DESIGN.md for design rules and approved exceptions."
+    }
+  },
+  "rules": {
+    "shadcn/no-arbitrary-values": ["error", {
+      "allow": ["layout", "ring-[3px]", "transition-[color,box-shadow]", "rounded-[2px]"]
+    }],
+    "shadcn/no-raw-colors": "warn",
+    "shadcn/no-unknown-classes": ["warn", {
+      "allow": [
+        "activity-empty",
+        "ai-chat-open",
+        "calendar",
+        "is-complete",
+        "is-open",
+        "is-valid",
+        "needs-save",
+        "plugin-tile",
+        "pod-loader--*",
+        "pod-loader__*",
+        "pod-onboarding-*",
+        "upcoming"
+      ]
+    }],
+    "shadcn/no-inline-styles": "off",
+    "shadcn/no-restyle": "off"
+  }
+}

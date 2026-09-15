@@ -8,7 +8,6 @@ const SURFACES: Array<{ key: string; text: string | RegExp }> = [
   { key: 'activity', text: 'Give Pod something to remember' },
   { key: 'memories', text: 'No items match your filters' },
   { key: 'docs', text: 'Star a doc to pin it here.' },
-  { key: 'journal', text: /one thing you noticed today/ },
   { key: 'skills', text: 'Your Capability Library is empty' },
   { key: 'connections', text: 'Manage what feeds Pod, what can use it, and which models are available.' },
 ];
@@ -22,6 +21,19 @@ for (const surface of SURFACES) {
     await expect(page.getByText(surface.text).first()).toBeVisible();
   });
 }
+
+// Not in SURFACES: the journal's inspiration prompt rotates daily
+// (CURATED_PROMPTS[hash(date) % len] when no AI provider is configured —
+// src/routes/journal.ts), so asserting one day's prompt copy is a time bomb.
+// Assert the surface chrome instead.
+test('journal surface renders', async ({ page }) => {
+  await page.goto('/');
+  const nav = page.locator('[data-nav="journal"]');
+  await nav.click();
+  await expect(nav).toHaveClass(/active/);
+  await expect(page.locator('.journal-inspiration-text')).not.toBeEmpty();
+  await expect(page.locator('.journal-date-title')).toBeVisible();
+});
 
 test('Ask Pod panel opens, closes, and accepts input (no send)', async ({ page }) => {
   await page.goto('/');

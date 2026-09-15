@@ -664,7 +664,7 @@ function ConnectStep({ agentId, dataSpaces, authToken, onDone }: { agentId: stri
     }
   };
 
-  if (error) return <p className="agents-error">{error}</p>;
+  if (error) return <p>{error}</p>;
   if (!conn) return <p className="agents-empty">Loading connection…</p>;
 
   // Compose the invite client-side from the parts the server returned. This
@@ -1069,7 +1069,7 @@ function AgentModal({ agent, dataSpaces, authToken, onClose, onSaved, initialSte
             </section>
           )}
 
-          {error && <p className="agents-error">{error}</p>}
+          {error && <p>{error}</p>}
         </div>
         )}
 

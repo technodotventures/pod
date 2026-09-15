@@ -13,7 +13,7 @@ export function PodLoader({ className = '', label = 'Loading…', size = 44 }: P
       <span className="pod-loader__tile" style={{ width: size, height: size }} aria-hidden="true">
         <svg className="pod-loader__art" viewBox="0 0 512 512" focusable="false">
           <g transform="translate(218 68)">
-            <path className="pod-loader__sparkle pod-loader__sparkle--medium" d="M0-32 9-9 32 0 9 9 0 32-9 9-32 0-9-9Z" />
+            <path className="pod-loader__sparkle" d="M0-32 9-9 32 0 9 9 0 32-9 9-32 0-9-9Z" />
           </g>
           <g transform="translate(322 105)">
             <path className="pod-loader__sparkle pod-loader__sparkle--large" d="M0-44 12-12 44 0 12 12 0 44-12 12-44 0-12-12Z" />
