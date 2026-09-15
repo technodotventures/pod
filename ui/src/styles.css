@@ -9188,8 +9188,15 @@ pre {
 .skill-tile-footer {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: auto;
+  min-width: 0;
+}
+
+.skill-tile-footer .skill-status-badge,
+.skill-tile-footer .skill-update-chip {
+  white-space: nowrap;
 }
 
 /* ── Skill Rows ── */

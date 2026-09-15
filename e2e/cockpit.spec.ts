@@ -3,12 +3,16 @@ import { test, expect } from '@playwright/test';
 /**
  * Cockpit surfaces — every primary nav surface renders on an onboarded,
  * empty Pod. Assertions target surface-unique copy (empty states included).
+ *
+ * Note (run 007 review): the Journal rotates its prompt daily
+ * (CURATED_PROMPTS in src/routes/journal.ts), so it asserts on its stable
+ * prompt-card structure — never on any one day's copy.
  */
-const SURFACES: Array<{ key: string; text: string | RegExp }> = [
+const SURFACES: Array<{ key: string; text?: string | RegExp; selector?: string }> = [
   { key: 'activity', text: 'Give Pod something to remember' },
   { key: 'memories', text: 'No items match your filters' },
   { key: 'docs', text: 'Star a doc to pin it here.' },
-  { key: 'journal', text: /one thing you noticed today/ },
+  { key: 'journal', selector: '.journal-inspiration' },
   { key: 'skills', text: 'Your Capability Library is empty' },
   { key: 'connections', text: 'Manage what feeds Pod, what can use it, and which models are available.' },
 ];
@@ -19,7 +23,10 @@ for (const surface of SURFACES) {
     const nav = page.locator(`[data-nav="${surface.key}"]`);
     await nav.click();
     await expect(nav).toHaveClass(/active/);
-    await expect(page.getByText(surface.text).first()).toBeVisible();
+    const target = surface.selector
+      ? page.locator(surface.selector).first()
+      : page.getByText(surface.text!).first();
+    await expect(target).toBeVisible();
   });
 }
 
