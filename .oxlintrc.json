@@ -15,6 +15,7 @@
     "shadcn/no-unknown-classes": ["warn", {
       "allow": [
         "activity-empty",
+        "ai-chat-open",
         "calendar",
         "is-complete",
         "is-open",

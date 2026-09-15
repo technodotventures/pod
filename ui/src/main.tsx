@@ -3657,7 +3657,7 @@ function App() {
       </aside>
 
       {/* ── Main Content ── */}
-      <div className={"app-body-wrap"}>
+      <div className={`app-body-wrap ${showAIChat ? 'ai-chat-open' : ''}`}>
         <div className="app-body">
           <main className="main" key={activeWorkspaceId}>
             <div className="main-scroll">
